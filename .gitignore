@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.env
+.venv
+env/
+venv/
+ENV/
+*.sqlite3
+*.log
+
+# VSCode
+.vscode/
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Angular
+node_modules/
+dist/
+tmp/
+out-tsc/
+.angular/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# C#
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vs/
+*.dbmdl
+*.pdb
+*.cache
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# Others
+.idea/
+*.iml
+*.swp
+*.bak
+*.tmp
