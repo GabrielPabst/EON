@@ -1,26 +1,26 @@
-import pyautogui
 import os
 import time
-from pynput import keyboard
-from pynput.mouse import Controller
 import json
+import pyautogui
+from pynput import mouse, keyboard
 
 class ActionRecorder:
+    ACTIONS_LOG = "actions.log"
+    MOUSE_LOG = "mouse_moves.log"
+
     def __init__(self, screenshot_radius=50, screenshot_dir="screenshots"):
         self.actions = []
         self.screenshot_radius = screenshot_radius
         self.screenshot_dir = screenshot_dir
         self.key_press_times = {}
-        self.mouse_press_times = {}  # Track mouse button press times
-        if not os.path.exists(self.screenshot_dir):
-            os.makedirs(self.screenshot_dir)
-        # Overwrite previous log files at initialization
-        open("actions.log", "w").close()
-        open("mouse_moves.log", "w").close()
+        self.mouse_press_times = {}
+        os.makedirs(self.screenshot_dir, exist_ok=True)
+        open(self.ACTIONS_LOG, "w").close()
+        open(self.MOUSE_LOG, "w").close()
 
     def on_click(self, x, y, button, pressed):
         button_str = str(button)
-        now = self.current_time()
+        now = self._current_time()
         key = f"mouse_{button_str}"
         if pressed:
             self.mouse_press_times[key] = now
@@ -33,9 +33,9 @@ class ActionRecorder:
                 'screenshot': None
             }
             self.actions.append(action)
-            self.log_action(action)
+            self._log_action(action)
         else:
-            screenshot = self.take_screenshot(x, y)
+            screenshot = self._take_screenshot(x, y)
             action = {
                 'type': 'release',
                 'key': key,
@@ -45,11 +45,11 @@ class ActionRecorder:
                 'screenshot': screenshot
             }
             self.actions.append(action)
-            self.log_action(action)
+            self._log_action(action)
 
     def on_press(self, key):
         key_str = str(key)
-        now = self.current_time()
+        now = self._current_time()
         if key_str not in self.key_press_times:
             self.key_press_times[key_str] = now
             action = {
@@ -61,13 +61,14 @@ class ActionRecorder:
                 'screenshot': None
             }
             self.actions.append(action)
-            self.log_action(action)
+            self._log_action(action)
+        # Stop recording on 'q'
         if key == keyboard.KeyCode.from_char('q'):
             return False
 
     def on_release(self, key):
         key_str = str(key)
-        now = self.current_time()
+        now = self._current_time()
         if key_str in self.key_press_times:
             del self.key_press_times[key_str]
         action = {
@@ -79,23 +80,21 @@ class ActionRecorder:
             'screenshot': None
         }
         self.actions.append(action)
-        self.log_action(action)
+        self._log_action(action)
 
     def on_move(self, x, y):
-        now = self.current_time()
+        now = self._current_time()
         action = {
             'type': 'move',
             'x': x,
             'y': y,
             'time': now
         }
-        print("pynput mouse moved to:", (x, y))
-        print("pyautogui mouse moved to:", pyautogui.position())
-        with open("mouse_moves.log", "a") as f:
+        with open(self.MOUSE_LOG, "a") as f:
             f.write(json.dumps(action) + "\n")
 
     def on_scroll(self, x, y, dx, dy):
-        now = self.current_time()
+        now = self._current_time()
         action = {
             'type': 'scroll',
             'x': x,
@@ -104,26 +103,46 @@ class ActionRecorder:
             'dy': dy,
             'time': now
         }
-        with open("mouse_moves.log", "a") as f:
+        with open(self.MOUSE_LOG, "a") as f:
             f.write(json.dumps(action) + "\n")
 
-    def take_screenshot(self, x, y):
+    def _take_screenshot(self, x, y):
         left = max(x - self.screenshot_radius, 0)
         top = max(y - self.screenshot_radius, 0)
         width = self.screenshot_radius * 2
         height = self.screenshot_radius * 2
-        filename = f"{self.screenshot_dir}/screenshot_{int(time.time()*1000)}_{x}_{y}.png"
+        filename = os.path.join(self.screenshot_dir, f"screenshot_{int(time.time()*1000)}_{x}_{y}.png")
         screenshot = pyautogui.screenshot(region=(left, top, width, height))
         screenshot.save(filename)
         return filename
 
-    def log_action(self, action):
-        # Only log if duration is not present or is > 0
+    def _log_action(self, action):
         if 'duration' in action and (action['duration'] is None or action['duration'] == 0.0):
             return
-        with open("actions.log", "a") as f:
+        with open(self.ACTIONS_LOG, "a") as f:
             f.write(json.dumps(action) + "\n")
 
-    def current_time(self):
-        from time import time
-        return time()
+    @staticmethod
+    def _current_time():
+        return time.time()
+
+class RecorderClient:
+    def __init__(self, screenshot_radius=50):
+        self.recorder = ActionRecorder(screenshot_radius=screenshot_radius)
+
+    def run(self):
+        print("Recording started. Press 'q' to stop.")
+        with keyboard.Listener(
+            on_press=self.recorder.on_press,
+            on_release=self.recorder.on_release
+        ) as keyboard_listener, mouse.Listener(
+            on_click=self.recorder.on_click,
+            on_move=self.recorder.on_move,
+            on_scroll=self.recorder.on_scroll
+        ) as mouse_listener:
+            keyboard_listener.join()
+            mouse_listener.stop()
+        print("Recording stopped.")
+
+if __name__ == "__main__":
+    RecorderClient().run()
