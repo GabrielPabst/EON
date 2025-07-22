@@ -1,0 +1,69 @@
+/* src/app/home/home.component.css */
+/* Grundtypografie */
+:root {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+/* Container */
+.content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+/* Hero Section */
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.hero .lead {
+  font-size: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+/* Info‑Abschnitte */
+.info, .how-it-works, .about {
+  margin-bottom: 3rem;
+}
+
+.info h2,
+.how-it-works h2,
+.about h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.info p,
+.about p {
+  font-size: 1.125rem;
+  margin-bottom: 1rem;
+}
+
+/* How‑It‑Works Liste */
+.how-it-works ol {
+  padding-left: 1.5rem;
+}
+
+.how-it-works li {
+  font-size: 1.125rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Call‑to‑Action */
+.cta {
+  position: sticky;
+  bottom: 2rem;
+  text-align: center;
+  margin-top: 4rem;
+}
+
+.cta-button {
+  padding: 1.25rem 3rem;
+  font-size: 1.5rem;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
