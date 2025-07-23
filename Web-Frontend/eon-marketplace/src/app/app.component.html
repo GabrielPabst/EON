@@ -1,4 +1,22 @@
-<tui-root>
-<router-outlet />
+<div class="min-h-screen flex flex-col bg-space text-white font-sans">
+  <!-- HEADER -->
+  <header class="bg-gradient-to-r from-space via-violet to-cyan text-white text-center text-3xl font-extrabold py-6 shadow-md relative z-10">
+    <div class="relative">
+      <span class="inline-block transition-transform duration-300 hover:scale-105">
+        EON Marketplace – <span class="text-sun">Insert Slogan here</span>
+      </span>
+      <!-- Glanz-Effekt -->
+      <div class="absolute inset-0 bg-white/10 rounded-lg blur-md opacity-0 hover:opacity-10 transition-opacity"></div>
+    </div>
+  </header>
 
-</tui-root>
+  <!-- CONTENT AREA -->
+  <main class="flex-grow px-4 sm:px-8 md:px-16 py-10 bg-gradient-to-b from-space via-graypayne to-[#1b2933] text-white">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-space border-t border-graypayne text-center text-sm text-gray-400 py-4 hover:text-sun transition-colors duration-300">
+    © 2025 Diplomarbeit – Gabriel Pabst und Felix Kohlböck
+  </footer>
+</div>

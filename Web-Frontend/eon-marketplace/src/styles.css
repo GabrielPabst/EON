@@ -1,1 +1,18 @@
-/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional eigene Extras */
+
+html {
+  scroll-behavior: smooth;
+}
+
+.cta-button {
+  @apply bg-sun text-black font-semibold py-2 px-4 rounded hover:bg-yellow-400 transition-colors duration-300;
+}
+
+.card-glow {
+  @apply bg-space text-white rounded-lg p-6 shadow-lg hover:shadow-2xl transition-all duration-300;
+  box-shadow: 0 0 20px rgba(255, 200, 87, 0.1);
+}

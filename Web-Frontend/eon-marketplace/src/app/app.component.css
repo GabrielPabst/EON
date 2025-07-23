@@ -1,0 +1,18 @@
+.header {
+  padding: 2rem;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+main {
+  padding: 2rem;
+  min-height: 70vh;
+}
+
+.footer {
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #888;
+}

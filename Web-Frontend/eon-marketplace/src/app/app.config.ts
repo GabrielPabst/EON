@@ -1,10 +1,12 @@
-import { provideEventPlugins } from "@taiga-ui/event-plugins";
-import { provideAnimations } from "@angular/platform-browser/animations";
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
-
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideAnimations(), provideZoneChangeDetection({ eventCoalescing: true }), provideRouter(routes), provideEventPlugins()]
+  providers: [
+    provideAnimations(),
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes),
+  ],
 };
