@@ -1,22 +1,30 @@
-<div class="min-h-screen flex flex-col bg-space text-white font-sans">
-  <!-- HEADER -->
-  <header class="bg-gradient-to-r from-space via-violet to-cyan text-white text-center text-3xl font-extrabold py-6 shadow-md relative z-10">
-    <div class="relative">
-      <span class="inline-block transition-transform duration-300 hover:scale-105">
-        EON Marketplace – <span class="text-sun">Insert Slogan here</span>
-      </span>
-      <!-- Glanz-Effekt -->
-      <div class="absolute inset-0 bg-white/10 rounded-lg blur-md opacity-0 hover:opacity-10 transition-opacity"></div>
+
+
+<!-- APP SHELL -->
+<div class="relative min-h-screen font-sans text-white flex flex-col z-0 bg-black">
+
+  <!-- NAVBAR -->
+  <header class="sticky top-0 z-50 bg-white text-deepblack shadow-sm border-b border-accent">
+    <div class="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
+      <div class="text-xl font-bold bg-gradient-to-r from-accent via-goldlight to-accent bg-clip-text text-transparent">
+        EON Marketplace
+      </div>
+      <nav class="hidden md:flex gap-6 text-sm font-medium">
+        <a href="#makros" class="hover:text-accent transition">Makros</a>
+        <a href="#funktioniert" class="hover:text-accent transition">Ablauf</a>
+        <a href="#projekt" class="hover:text-accent transition">Projekt</a>
+      </nav>
     </div>
   </header>
 
-  <!-- CONTENT AREA -->
-  <main class="flex-grow px-4 sm:px-8 md:px-16 py-10 bg-gradient-to-b from-space via-graypayne to-[#1b2933] text-white">
+  <!-- MAIN CONTENT (no padding here) -->
+  <main class="flex-grow w-full relative z-10">
     <router-outlet></router-outlet>
   </main>
 
   <!-- FOOTER -->
-  <footer class="bg-space border-t border-graypayne text-center text-sm text-gray-400 py-4 hover:text-sun transition-colors duration-300">
+  <footer class="w-full text-center text-sm text-gray-500 py-6 border-t border-accent bg-black/70 z-10">
     © 2025 Diplomarbeit – Gabriel Pabst und Felix Kohlböck
   </footer>
+
 </div>

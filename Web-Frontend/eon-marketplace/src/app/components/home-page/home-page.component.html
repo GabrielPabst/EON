@@ -1,67 +1,95 @@
-<main class="max-w-6xl mx-auto px-6 py-16 text-white space-y-28">
-  <!-- HERO -->
-  <section class="text-center space-y-8">
-    <h1
-      class="text-4xl sm:text-6xl font-extrabold bg-gradient-to-r from-sun via-yellow-400 to-cyan bg-clip-text text-transparent animate-pulse drop-shadow-lg"
-    >
-      Willkommen beim <span class="whitespace-nowrap">EON‑Marketplace</span>
+<main class="w-screen text-white font-sans relative z-10">
+
+  <!-- HERO SECTION -->
+  <section class="relative w-full h-[600px] flex flex-col items-center justify-center text-center px-4">
+    <div class="absolute inset-0 bg-black/60 z-[-1]"></div>
+
+    <h1 class="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 bg-clip-text text-transparent">
+      Willkommen beim <br />EON‑Marketplace
     </h1>
-    <p class="text-xl sm:text-2xl text-gray-200 max-w-3xl mx-auto leading-relaxed">
-      Entdecke die Zukunft der Automatisierung: <span class="text-sun font-semibold">KI‑gesteuerte Makros</span> für Office,
-      Multimedia und vieles mehr. Spare Zeit, optimiere deine Workflows und teile deine eigenen Skripte mit der Community.
+    <p class="text-lg max-w-xl text-gray-200 mt-6">
+      KI‑gestützte Makros für Office, Multimedia und mehr.<br />Automatisieren war noch nie so einfach.
     </p>
-  </section>
-
-  <!-- INFOBLOCK -->
-  <section class="space-y-6 px-4">
-    <h2 class="text-4xl font-bold text-sun drop-shadow-md">Was sind Makros?</h2>
-    <p class="text-lg text-gray-100 leading-relaxed">
-      Ein Makro ist ein kleines Programm oder Skript, das repetitive Aufgaben automatisiert – in Word, Excel, Photoshop oder Spotify.
-      Mit <span class="text-yellow-300 font-medium">KI-Logik</span> werden sie intelligent und anpassbar.
-    </p>
-    <p class="text-lg text-gray-100">
-      Auf unserem Marktplatz findest du sofort nutzbare Makros oder teilst deine eigenen Kreationen mit der Community.
-    </p>
-  </section>
-
-  <!-- HOW IT WORKS -->
-  <section class="space-y-6 px-4">
-    <h2 class="text-4xl font-bold text-sun drop-shadow-md">So funktioniert’s</h2>
-    <ol class="list-decimal list-inside space-y-3 text-gray-100 text-lg leading-relaxed">
-      <li>
-        <span class="font-semibold text-sun">Suchen:</span> Filtere nach Kategorie, Tags oder Beliebtheit.
-      </li>
-      <li>
-        <span class="font-semibold text-sun">Auswählen:</span> Sieh dir Detailinfos, Screenshots und Bewertungen an.
-      </li>
-      <li>
-        <span class="font-semibold text-sun">Herunterladen:</span> Ein Klick und dein Makro ist einsatzbereit.
-      </li>
-      <li>
-        <span class="font-semibold text-sun">Bewerten und Teilen:</span> Gib Feedback oder lade dein eigenes Makro hoch.
-      </li>
-    </ol>
-  </section>
-
-  <!-- ABOUT -->
-  <section class="space-y-6 px-4">
-    <h2 class="text-4xl font-bold text-sun drop-shadow-md">Über dieses Projekt</h2>
-    <p class="text-lg text-gray-100 leading-relaxed">
-      Diese Plattform entsteht im Rahmen unserer Diplomarbeit und kombiniert moderne KI-Technologien
-      mit einem nutzerzentrierten Marktplatz.
-    </p>
-    <p class="text-lg text-gray-100">
-      Ziel: <span class="font-medium text-yellow-300">smarte Automatisierung für alle</span>, direkt zugänglich und community-driven.
-    </p>
-  </section>
-
-  <!-- CTA -->
-  <div class="text-center mt-16">
-    <button
-      class="relative inline-block px-10 py-5 rounded-xl text-black font-bold text-lg bg-sun shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300
-        before:absolute before:inset-0 before:rounded-xl before:bg-white/40 before:blur-lg before:opacity-0 hover:before:opacity-20"
-    >
-      Entdecken Sie Makros
+    <button class="mt-8 px-6 py-3 bg-accent text-black font-semibold rounded-lg hover:brightness-110 transition">
+      Entdecken
     </button>
-  </div>
+  </section>
+
+  <!-- GOLDLINE -->
+  <div class="gold-line"></div>
+
+  <!-- SECTION: WAS SIND MAKROS -->
+  <section class="w-full bg-white text-deepblack py-24">
+    <div class="w-full px-4 md:px-12 xl:px-24 grid md:grid-cols-2 gap-12 items-center">
+      <div class="space-y-5">
+        <h2 class="text-3xl font-bold text-accent">Was sind Makros?</h2>
+        <p class="text-lg text-gray-800">
+          Makros automatisieren Abläufe in Excel, Word oder Photoshop. Dank <span class="text-accent font-semibold">KI‑Boost</span> werden sie noch flexibler & intelligenter.
+        </p>
+        <p class="text-lg text-gray-800">
+          Im EON-Marktplatz findest du fertige Makros oder kannst deine eigenen teilen.
+        </p>
+      </div>
+      <div class="rounded-xl bg-softgray h-72 flex items-center justify-center text-gray-500 shadow-inner">
+        [ Makro-Illustration / Placeholder ]
+      </div>
+    </div>
+  </section>
+
+  <!-- GOLDLINE -->
+  <div class="gold-line"></div>
+
+  <!-- SECTION: SO FUNKTIONIERT’S -->
+  <section id="funktioniert" class="w-full text-white py-24">
+    <div class="w-full px-4 md:px-12 xl:px-24">
+      <h2 class="text-4xl font-bold text-accent text-center mb-16">So funktioniert’s</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="card-glow">
+          <img src="assets/icons/search.svg" class="w-16 h-16 mb-4" />
+          <h3 class="text-xl font-bold text-accent">Suchen</h3>
+          <p class="text-sm text-gray-400 mt-2">Finde Makros nach Kategorie, Tags & Beliebtheit.</p>
+        </div>
+        <div class="card-glow">
+          <img src="assets/icons/checklist.svg" class="w-16 h-16 mb-4" />
+          <h3 class="text-xl font-bold text-accent">Auswählen</h3>
+          <p class="text-sm text-gray-400 mt-2">Bewertungen, Screenshots und Funktionen vergleichen.</p>
+        </div>
+        <div class="card-glow">
+          <img src="assets/icons/download.svg" class="w-16 h-16 mb-4" />
+          <h3 class="text-xl font-bold text-accent">Herunterladen</h3>
+          <p class="text-sm text-gray-400 mt-2">Makro installieren & direkt nutzen.</p>
+        </div>
+        <div class="card-glow">
+          <img src="assets/icons/upload.svg" class="w-16 h-16 mb-4" />
+          <h3 class="text-xl font-bold text-accent">Teilen</h3>
+          <p class="text-sm text-gray-400 mt-2">Eigene Makros hochladen & Feedback erhalten.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GOLDLINE -->
+  <div class="gold-line"></div>
+
+  <!-- SECTION: ÜBER PROJEKT -->
+  <section id="projekt" class="w-full bg-white text-deepblack py-24">
+    <div class="w-full px-4 md:px-12 xl:px-24 grid md:grid-cols-2 gap-12 items-center">
+      <div class="space-y-6">
+        <h2 class="text-3xl font-bold text-accent">Über dieses Projekt</h2>
+        <p class="text-lg text-gray-700">
+          Dieses Projekt ist Teil unserer Diplomarbeit. Ziel: <span class="text-accent font-semibold">smarte Automatisierung für alle</span>.
+        </p>
+        <button class="px-6 py-3 bg-accent text-black font-semibold rounded-lg hover:brightness-110 transition">
+          Jetzt loslegen
+        </button>
+      </div>
+      <div class="rounded-xl bg-softgray h-72 flex items-center justify-center text-gray-500 shadow-inner">
+        [ Projektgrafik / Placeholder ]
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL GOLDLINE -->
+  <div class="gold-line"></div>
+
 </main>

@@ -2,17 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optional eigene Extras */
+@layer utilities {
+  .card-glow {
+    @apply bg-neutral-900 text-white rounded-xl p-6 transition-transform duration-300;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+  }
+
+  .card-glow:hover {
+    @apply -translate-y-1;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .gold-line {
+    @apply h-1 w-full bg-gradient-to-r from-transparent via-accent to-transparent;
+  }
+
+  .shadow-horizontal-glow {
+    box-shadow: 0 0 60px #00000066;
+  }
+}
+
+/* 👇 DAS IST DER FIX für den weißen Rand */
+html, body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 html {
   scroll-behavior: smooth;
 }
 
-.cta-button {
-  @apply bg-sun text-black font-semibold py-2 px-4 rounded hover:bg-yellow-400 transition-colors duration-300;
-}
 
-.card-glow {
-  @apply bg-space text-white rounded-lg p-6 shadow-lg hover:shadow-2xl transition-all duration-300;
-  box-shadow: 0 0 20px rgba(255, 200, 87, 0.1);
+body {
+  position: relative;
+  overflow-x: hidden;
 }
