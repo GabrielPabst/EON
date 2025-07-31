@@ -5,7 +5,7 @@ from recorder_client import RecorderClient
 
 def main():
     # Optionally specify screenshot_radius or other parameters here
-    client = RecorderClient(screenshot_radius=50)
+    client = RecorderClient()
     client.run()
 
 if __name__ == "__main__":
