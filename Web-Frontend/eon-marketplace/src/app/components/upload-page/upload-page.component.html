@@ -1,0 +1,106 @@
+<section class="w-full bg-deepblack text-white py-24">
+  <div class="max-w-3xl mx-auto px-4 md:px-12 xl:px-24">
+    <!-- Intro -->
+    <div class="text-center mb-12">
+      <h2 class="text-4xl font-bold text-accent mb-2">Makro hochladen</h2>
+      <p class="text-white/70 text-lg">Füge ein neues KI-Makro zum Marktplatz hinzu.</p>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="space-y-6">
+
+      <!-- Name -->
+      <div>
+        <label class="text-sm font-medium text-white/80 mb-2 block">Makro Name</label>
+        <input
+          type="text"
+          [(ngModel)]="macro.name"
+          placeholder="Makro Name"
+          class="w-full bg-black border border-white/10 text-white px-5 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent transition placeholder-white/40"
+        />
+      </div>
+
+      <!-- Beschreibung -->
+      <div>
+        <label class="text-sm font-medium text-white/80 mb-2 block">Beschreibung</label>
+        <textarea
+          [(ngModel)]="macro.description"
+          placeholder="Beschreibung..."
+          rows="4"
+          class="w-full bg-black border border-white/10 text-white px-5 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent transition placeholder-white/40"
+        ></textarea>
+      </div>
+
+      <!-- Kategorie Dropdown -->
+      <div>
+        <label class="text-sm font-medium text-white/80 mb-2 block">Kategorie</label>
+        <div class="relative">
+          <select
+            [(ngModel)]="macro.category"
+            class="w-full bg-black border px-5 py-3 rounded-xl appearance-none focus:outline-none transition text-white"
+            [ngClass]="categoryBorder(macro.category)"
+          >
+            <option disabled selected value="">Kategorie auswählen</option>
+            @for (cat of categories; track cat) {
+              <option [value]="cat">{{ cat }}</option>
+            }
+          </select>
+          <div class="pointer-events-none absolute right-5 top-1/2 transform -translate-y-1/2 text-white">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Thumbnail Upload -->
+      <div>
+        <label class="text-sm font-medium text-white/80 mb-2 block">Vorschau (Bild/Video)</label>
+        <input
+          type="file"
+          accept="image/*,video/*"
+          (change)="onThumbnailSelected($event)"
+          class="block w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-accent file:text-black hover:file:bg-orange-300 bg-black rounded-xl border border-white/10 transition"
+        />
+      </div>
+
+      <!-- Vorschau Anzeige -->
+      @if (thumbnailPreview) {
+        <div class="mt-4 rounded-lg overflow-hidden border border-white/10">
+          @if (!isVideoPreview) {
+            <img
+              [src]="thumbnailPreview"
+              alt="Preview"
+              class="w-full max-h-64 object-cover rounded-lg"
+            />
+          } @else {
+            <video
+              [src]="thumbnailPreview"
+              controls
+              class="w-full max-h-64 rounded-lg"
+            ></video>
+          }
+        </div>
+      }
+
+      <!-- Makro Datei Upload -->
+      <div>
+        <label class="text-sm font-medium text-white/80 mb-2 block">Makro-Datei (.py, .bat etc.)</label>
+        <input
+          type="file"
+          (change)="onFileSelected($event)"
+          class="block w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-accent file:text-black hover:file:bg-orange-300 bg-black rounded-xl border border-white/10 transition"
+        />
+      </div>
+
+      <!-- Button -->
+      <div class="text-center pt-4">
+        <button
+          class="bg-accent text-black font-semibold text-lg px-8 py-3 rounded-full hover:bg-orange-400 transition"
+        >
+          Hochladen
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

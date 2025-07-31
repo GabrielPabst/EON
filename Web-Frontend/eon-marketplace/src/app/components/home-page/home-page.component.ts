@@ -14,4 +14,8 @@ export class HomePageComponent {
   navigateToMacros() {
     this.router.navigate(['/macros']);
   }
+
+  navigateToDownloadApp() {
+    this.router.navigate(['/downloadApp']);
+  }
 }
