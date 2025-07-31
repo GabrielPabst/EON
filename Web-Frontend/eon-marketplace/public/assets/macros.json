@@ -1,0 +1,182 @@
+[
+  {
+    "id": "1",
+    "name": "Bildkonverter",
+    "category": "Multimedia",
+    "filename": "bild.py",
+    "file": null,
+    "createdAt": "2025-07-28T10:00:00Z",
+    "description": "Konvertiert PNG-Dateien automatisch in das JPG-Format. Ideal zur Speicherplatzreduktion und Kompatibilitätsverbesserung."
+  },
+  {
+    "id": "2",
+    "name": "Mail Auto",
+    "category": "Excel",
+    "filename": "mail.py",
+    "file": null,
+    "createdAt": "2025-07-27T09:00:00Z",
+    "description": "Versendet E-Mails automatisch über ein vorgegebenes SMTP-Profil. Unterstützt Betreffzeilen, HTML-Inhalte und Dateianhänge."
+  },
+  {
+    "id": "3",
+    "name": "Word Style Reset",
+    "category": "Word",
+    "filename": "reset.docm",
+    "file": null,
+    "createdAt": "2025-07-26T14:45:00Z",
+    "description": "Entfernt sämtliche Formatierungen in Word-Dokumenten auf Knopfdruck. Damit lassen sich Texte blitzschnell neutralisieren und neu gestalten."
+  },
+  {
+    "id": "4",
+    "name": "PDF Merger",
+    "category": "PDF",
+    "filename": "mergepdf.py",
+    "file": null,
+    "createdAt": "2025-07-25T12:30:00Z",
+    "description": "Fügt mehrere PDF-Dateien in der angegebenen Reihenfolge zu einer einzigen Datei zusammen. Unterstützt Drag & Drop sowie Batch-Verarbeitung."
+  },
+  {
+    "id": "5",
+    "name": "Ping Tool",
+    "category": "Netzwerk",
+    "filename": "ping.bat",
+    "file": null,
+    "createdAt": "2025-07-24T08:00:00Z",
+    "description": "Testet die Erreichbarkeit von Ziel-IPs per Ping und zeigt Antwortzeiten in Millisekunden. Perfekt für Netzwerkdiagnosen oder Serverchecks."
+  },
+  {
+    "id": "6",
+    "name": "Dateien sortieren",
+    "category": "Tools",
+    "filename": "sorter.py",
+    "file": null,
+    "createdAt": "2025-07-22T10:30:00Z",
+    "description": "Sortiert Dateien in einem Verzeichnis automatisch nach Typ in entsprechende Ordner. Schafft Ordnung auf Knopfdruck – ideal für Downloads und Projekte."
+  },
+  {
+    "id": "7",
+    "name": "Diagramm Updater",
+    "category": "Excel",
+    "filename": "update-charts.xlsm",
+    "file": null,
+    "createdAt": "2025-07-21T15:00:00Z",
+    "description": "Aktualisiert Excel-Diagramme auf Basis verknüpfter Daten automatisch. Spart Zeit bei Reporting, Visualisierung und KPI-Dashboards."
+  },
+  {
+    "id": "8",
+    "name": "Text-Cleaner",
+    "category": "Word",
+    "filename": "cleaner.docm",
+    "file": null,
+    "createdAt": "2025-07-20T11:45:00Z",
+    "description": "Entfernt zuverlässig unerwünschte Sonderzeichen, Emojis und Formatierungsreste aus Word-Dokumenten. Perfekt für die Vorbereitung professioneller Texte."
+  },
+  {
+    "id": "9",
+    "name": "Video Resizer",
+    "category": "Multimedia",
+    "filename": "resize.py",
+    "file": null,
+    "createdAt": "2025-07-19T08:00:00Z",
+    "description": "Skaliert MP4-Videos auf ein definiertes Maß. Unterstützt verschiedene Auflösungen und Seitenverhältnisse – ideal für Social Media oder Archivierung."
+  },
+  {
+    "id": "10",
+    "name": "PDF Signierer",
+    "category": "PDF",
+    "filename": "signer.py",
+    "file": null,
+    "createdAt": "2025-07-18T14:30:00Z",
+    "description": "Fügt digitale Unterschriften oder Signaturbilder automatisiert in PDF-Dokumente ein. Besonders geeignet für Verträge und Bestätigungen."
+  },
+  {
+    "id": "11",
+    "name": "Netzwerkmonitor",
+    "category": "Netzwerk",
+    "filename": "netmon.exe",
+    "file": null,
+    "createdAt": "2025-07-17T12:15:00Z",
+    "description": "Überwacht das Netzwerk in Echtzeit und zeigt aktive IPs, Latenzen und Paketverluste. Praktisch für IT-Administratoren oder Diagnosezwecke."
+  },
+  {
+    "id": "12",
+    "name": "System Cleaner",
+    "category": "Tools",
+    "filename": "clean.bat",
+    "file": null,
+    "createdAt": "2025-07-16T10:00:00Z",
+    "description": "Löscht temporäre Systemdateien und leere Verzeichnisse mit einem Klick. Hilft dabei, Speicherplatz freizugeben und die Leistung zu verbessern."
+  },
+  {
+    "id": "13",
+    "name": "Auto-Sortierung",
+    "category": "Excel",
+    "filename": "autosort.xlsm",
+    "file": null,
+    "createdAt": "2025-07-15T16:00:00Z",
+    "description": "Sortiert Excel-Tabellen automatisch nach vordefinierten Regeln oder Spalten. Besonders hilfreich bei großen Datenmengen oder Reports."
+  },
+  {
+    "id": "14",
+    "name": "Formatierer",
+    "category": "Word",
+    "filename": "format.docm",
+    "file": null,
+    "createdAt": "2025-07-14T09:20:00Z",
+    "description": "Wendet ein standardisiertes Formatierungsschema auf Word-Dokumente an. Inklusive Schriften, Abständen und Farben für ein einheitliches Layout."
+  },
+  {
+    "id": "15",
+    "name": "Audio Compressor",
+    "category": "Multimedia",
+    "filename": "compressor.py",
+    "file": null,
+    "createdAt": "2025-07-13T13:10:00Z",
+    "description": "Komprimiert WAV-Audiodateien in platzsparende MP3s. Ideal für Podcasts, Sprachaufnahmen oder Archivierung in kleinerer Größe."
+  },
+  {
+    "id": "16",
+    "name": "PDF Renamer",
+    "category": "PDF",
+    "filename": "renamer.py",
+    "file": null,
+    "createdAt": "2025-07-12T11:05:00Z",
+    "description": "Benennt PDF-Dateien automatisch anhand von Metadaten wie Titel, Autor oder Erstellungsdatum um. Ideal zur Strukturierung großer Archivsammlungen."
+  },
+  {
+    "id": "17",
+    "name": "DNS-Flusher",
+    "category": "Netzwerk",
+    "filename": "flushdns.bat",
+    "file": null,
+    "createdAt": "2025-07-11T07:00:00Z",
+    "description": "Leert den DNS-Cache unter Windows zur Behebung von Netzwerkproblemen. Wird häufig zur Lösung von Webseiten-Ladeproblemen verwendet."
+  },
+  {
+    "id": "18",
+    "name": "Duplikatfinder",
+    "category": "Tools",
+    "filename": "dupescan.py",
+    "file": null,
+    "createdAt": "2025-07-10T15:15:00Z",
+    "description": "Durchsucht Ordner nach doppelten Dateien basierend auf Name, Größe oder Inhalt. Spart Speicherplatz und verhindert redundante Datenhaltung."
+  },
+  {
+    "id": "19",
+    "name": "Makro Sicherung",
+    "category": "Word",
+    "filename": "backup.docm",
+    "file": null,
+    "createdAt": "2025-07-09T14:30:00Z",
+    "description": "Exportiert alle aktiven Office-Makros in einer ZIP-Datei zur Sicherung oder Weitergabe. Unterstützt Word, Excel und PowerPoint."
+  },
+  {
+    "id": "20",
+    "name": "Excel Kalendergenerator",
+    "category": "Excel",
+    "filename": "kalender.xlsm",
+    "file": null,
+    "createdAt": "2025-07-08T08:30:00Z",
+    "description": "Erstellt Monatskalender in Excel mit Feiertagen, Wochenenden und farblicher Markierung. Ideal zur Organisation von Terminen und Deadlines."
+  }
+]

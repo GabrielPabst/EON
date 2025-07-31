@@ -1,23 +1,41 @@
-
-
 <!-- APP SHELL -->
 <div class="relative min-h-screen font-sans text-white flex flex-col z-0 bg-black">
 
   <!-- NAVBAR -->
-  <header class="sticky top-0 z-50 bg-white text-deepblack shadow-sm border-b border-accent">
-    <div class="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
-      <div class="text-xl font-bold bg-gradient-to-r from-accent via-goldlight to-accent bg-clip-text text-transparent">
+  <header class="sticky top-0 z-50 bg-gradient-to-r from-black via-zinc-950 to-black shadow-md border-b border-goldlight/60">
+    <div class="max-w-7xl mx-auto flex justify-between items-center px-6 py-5">
+
+      <!-- Logo -->
+      <div
+        class="text-2xl font-extrabold bg-gradient-to-r from-accent via-goldlight to-accent bg-clip-text text-transparent cursor-pointer tracking-wide"
+        [routerLink]="'/home'"
+      >
         EON Marketplace
       </div>
-      <nav class="hidden md:flex gap-6 text-sm font-medium">
-        <a href="#makros" class="hover:text-accent transition">Makros</a>
-        <a href="#funktioniert" class="hover:text-accent transition">Ablauf</a>
-        <a href="#projekt" class="hover:text-accent transition">Projekt</a>
+
+      <!-- Navigation -->
+      <nav class="flex gap-10 text-base font-semibold tracking-tight">
+        <a
+          routerLink="/home"
+          routerLinkActive="text-accent underline underline-offset-8"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="transition hover:text-accent hover:underline hover:underline-offset-8"
+        >
+          Home
+        </a>
+        <a
+          routerLink="/macros"
+          routerLinkActive="text-accent underline underline-offset-8"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="transition hover:text-accent hover:underline hover:underline-offset-8"
+        >
+          Makros
+        </a>
       </nav>
     </div>
   </header>
 
-  <!-- MAIN CONTENT (no padding here) -->
+  <!-- MAIN CONTENT -->
   <main class="flex-grow w-full relative z-10">
     <router-outlet></router-outlet>
   </main>
@@ -26,5 +44,4 @@
   <footer class="w-full text-center text-sm text-gray-500 py-6 border-t border-accent bg-black/70 z-10">
     © 2025 Diplomarbeit – Gabriel Pabst und Felix Kohlböck
   </footer>
-
 </div>
