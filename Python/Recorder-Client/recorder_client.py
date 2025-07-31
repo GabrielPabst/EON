@@ -8,7 +8,7 @@ class ActionRecorder:
     ACTIONS_LOG = "actions.log"
     MOUSE_LOG = "mouse_moves.log"
 
-    def __init__(self, screenshot_radius=50, screenshot_dir="screenshots"):
+    def __init__(self, screenshot_radius=20, screenshot_dir="screenshots"):
         self.actions = []
         self.screenshot_radius = screenshot_radius
         self.screenshot_dir = screenshot_dir
@@ -23,6 +23,7 @@ class ActionRecorder:
         now = self._current_time()
         key = f"mouse_{button_str}"
         if pressed:
+            screenshot = self._take_screenshot(x, y)
             self.mouse_press_times[key] = now
             action = {
                 'type': 'press',
@@ -30,19 +31,18 @@ class ActionRecorder:
                 'x': x,
                 'y': y,
                 'time': now,
-                'screenshot': None
+                'screenshot': screenshot
             }
             self.actions.append(action)
             self._log_action(action)
         else:
-            screenshot = self._take_screenshot(x, y)
             action = {
                 'type': 'release',
                 'key': key,
                 'x': x,
                 'y': y,
                 'time': now,
-                'screenshot': screenshot
+                'screenshot': None
             }
             self.actions.append(action)
             self._log_action(action)
@@ -107,11 +107,12 @@ class ActionRecorder:
             f.write(json.dumps(action) + "\n")
 
     def _take_screenshot(self, x, y):
-        left = max(x - self.screenshot_radius, 0)
-        top = max(y - self.screenshot_radius, 0)
+        left = max(0, x - self.screenshot_radius)
+        top = max(0, y - self.screenshot_radius)
         width = self.screenshot_radius * 2
         height = self.screenshot_radius * 2
         filename = os.path.join(self.screenshot_dir, f"screenshot_{int(time.time()*1000)}_{x}_{y}.png")
+        print(f"Taking screenshot at {filename} with region ({left}, {top}, {width}, {height})")
         screenshot = pyautogui.screenshot(region=(left, top, width, height))
         screenshot.save(filename)
         return filename
@@ -127,8 +128,8 @@ class ActionRecorder:
         return time.time()
 
 class RecorderClient:
-    def __init__(self, screenshot_radius=50):
-        self.recorder = ActionRecorder(screenshot_radius=screenshot_radius)
+    def __init__(self):
+        self.recorder = ActionRecorder()
 
     def run(self):
         print("Recording started. Press 'q' to stop.")
