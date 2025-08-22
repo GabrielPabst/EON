@@ -132,62 +132,6 @@ class EventTableModel(QtCore.QAbstractTableModel):
 
 
 # -----------------------------
-# Timeline (vertical) using QListView + delegate
-# -----------------------------
-class TimelineListModel(QtCore.QAbstractListModel):
-    def __init__(self, manager: ActionsLogManager, parent=None):
-        super().__init__(parent)
-        self.manager = manager
-        self.rows = list(range(len(self.manager.events)))
-
-    def rowCount(self, parent=QtCore.QModelIndex()):
-        return len(self.rows)
-
-    def data(self, index: QtCore.QModelIndex, role=QtCore.Qt.DisplayRole):
-        if not index.isValid():
-            return None
-        row = self.rows[index.row()]
-        e = self.manager.events[row]
-        if role == QtCore.Qt.DisplayRole:
-            return f"{human_time(e.time)}  |  {e.type.upper()}  {e.key}  (x={e.x}, y={e.y})"
-        if role == QtCore.Qt.UserRole:
-            return row
-        if role == QtCore.Qt.DecorationRole:
-            # small colored dot
-            pm = QtGui.QPixmap(16, 16)
-            pm.fill(QtCore.Qt.transparent)
-            p = QtGui.QPainter(pm)
-            p.setRenderHint(QtGui.QPainter.Antialiasing)
-            color = QtGui.QColor(34, 139, 34) if e.type == EventType.PRESS.value else QtGui.QColor(178, 34, 34)
-            p.setBrush(QtGui.QBrush(color))
-            p.setPen(QtCore.Qt.NoPen)
-            p.drawEllipse(2, 2, 12, 12)
-            p.end()
-            return QtGui.QIcon(pm)
-        return None
-
-    def refresh(self):
-        self.beginResetModel()
-        self.rows = list(range(len(self.manager.events)))
-        self.endResetModel()
-
-    def real_index(self, row: int) -> int:
-        return self.rows[row]
-
-    def row_for_real_index(self, real_index: int) -> Optional[int]:
-        try:
-            return self.rows.index(real_index)
-        except ValueError:
-            return None
-
-
-class TimelineDelegate(QtWidgets.QStyledItemDelegate):
-    def sizeHint(self, option, index):
-        sz = super().sizeHint(option, index)
-        return QtCore.QSize(sz.width(), max(sz.height(), 28))
-
-
-# -----------------------------
 # Event Editor Dialog
 # -----------------------------
 class EventEditorDialog(QtWidgets.QDialog):
@@ -283,6 +227,7 @@ class EventEditorDialog(QtWidgets.QDialog):
         x_val = None if self.x_null.isChecked() else int(self.x_spin.value())
         y_val = None if self.y_null.isChecked() else int(self.y_spin.value())
         start_time = self.manager.events[0].time if self.manager.events else None
+
         return {
             "type": self.type_combo.currentText(),
             "key": self.key_combo.currentText().strip(),
@@ -309,7 +254,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(1200, 720)
 
         self.manager = ActionsLogManager()
-
         self._build_ui()
         self._apply_style()
 
@@ -351,18 +295,9 @@ class MainWindow(QtWidgets.QMainWindow):
         right = QtWidgets.QSplitter()
         right.setOrientation(QtCore.Qt.Vertical)
 
-        # Timeline
-         
-        self.timeline_model = TimelineListModel(self.manager)
-        self.timeline = QtWidgets.QListView()
-        self.timeline.setModel(self.timeline_model)
-        self.timeline.setItemDelegate(TimelineDelegate())
-        self.timeline.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self.timeline.setAlternatingRowColors(True)
-        self.timeline.selectionModel().selectionChanged.connect(self._sync_selection_from_timeline)
-        self.timeline.doubleClicked.connect(lambda _: self.edit_event())
-        
-
+        # Timeline - Initialize with empty data first
+        from zoomable_timeline import ZoomableTimeline
+        self.timeline = ZoomableTimeline(event_data=[], mouse_moves_log_path="mouse_moves.log")
         right.addWidget(self._wrap_in_group("Timeline (vertical)", self.timeline))
 
         # Screenshot preview
@@ -455,6 +390,29 @@ class MainWindow(QtWidgets.QMainWindow):
             """
         )
 
+    def _refresh_timeline(self):
+        """Convert manager events to timeline format and refresh"""
+        if hasattr(self, 'timeline'):
+            # Convert your ActionEvent objects to the format expected by timeline
+            timeline_events = []
+            for i, event in enumerate(self.manager.events):
+                # Ensure time is a float, not a string or other type
+                event_time = float(event.time) if event.time is not None else 0.0
+                
+                timeline_events.append({
+                    'index': i,
+                    'type': event.type,
+                    'key': event.key,
+                    'time': event_time,
+                    'x': event.x if event.x is not None else 0,
+                    'y': event.y if event.y is not None else 0,
+                    'screenshot': event.screenshot
+                })
+            
+            # Update timeline with new data using load_data method
+            print("Refreshing timeline with events:", timeline_events)
+            self.timeline.load_data(None, timeline_events, "mouse_moves.log")
+
     # --------------
     # Actions
     # --------------
@@ -465,7 +423,10 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             self.manager.load_from_file(fn)
             self.table_model.refresh()
-            self.timeline_model.refresh()
+            
+            # Update timeline with events
+            self._refresh_timeline()
+            
             self.status.showMessage(f"Loaded {len(self.manager.events)} events from {os.path.basename(fn)}")
             if self.manager.events:
                 self._select_row(0)
@@ -503,12 +464,6 @@ class MainWindow(QtWidgets.QMainWindow):
         proxy_row = sel[0].row()
         return self.table_model.map_to_real_index(proxy_row)
 
-    def _current_real_index_from_timeline(self) -> Optional[int]:
-        sel = self.timeline.selectionModel().selectedIndexes()
-        if not sel:
-            return None
-        return sel[0].data(QtCore.Qt.UserRole)
-
     def add_event(self):
         dlg = EventEditorDialog(self, manager=self.manager)
         if dlg.exec() == QtWidgets.QDialog.Accepted:
@@ -521,7 +476,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     vals["type"], vals["key"], vals["x"], vals["y"], vals["time"], vals["screenshot"], insert_index=insert_index
                 )
                 self.table_model.refresh()
-                self.timeline_model.refresh()
+                self._refresh_timeline()
                 self._select_real_index(idx)
                 self.status.showMessage("Event created")
             except ValidationError as ve:
@@ -532,8 +487,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def edit_event(self):
         real_idx = self._current_real_index_from_table()
         if real_idx is None:
-            real_idx = self._current_real_index_from_timeline()
-        if real_idx is None:
             QtWidgets.QMessageBox.information(self, "Edit Event", "Select an event to edit.")
             return
         ev = self.manager.get_event(real_idx)
@@ -543,7 +496,7 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 self.manager.modify_event(real_idx, **vals)
                 self.table_model.refresh()
-                self.timeline_model.refresh()
+                self._refresh_timeline()
                 self._select_real_index(real_idx)
                 self.status.showMessage("Event updated")
             except ValidationError as ve:
@@ -553,8 +506,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def delete_event(self):
         real_idx = self._current_real_index_from_table()
-        if real_idx is None:
-            real_idx = self._current_real_index_from_timeline()
         if real_idx is None:
             QtWidgets.QMessageBox.information(self, "Delete Event", "Select an event to delete.")
             return
@@ -569,14 +520,13 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             deleted = self.manager.delete_event(real_idx)
             self.table_model.refresh()
-            self.timeline_model.refresh()
+            self._refresh_timeline()
             # select a nearby row if possible
             next_idx = min(deleted[0], len(self.manager.events) - 1)
             if next_idx >= 0 and self.manager.events:
                 self._select_real_index(next_idx)
             else:
                 self.table.clearSelection()
-                self.timeline.clearSelection()
             self.status.showMessage(f"Deleted events at indices: {deleted}")
             self._update_preview()
         except Exception as e:
@@ -591,42 +541,22 @@ class MainWindow(QtWidgets.QMainWindow):
         sm = self.table.selectionModel()
         self.table.selectRow(proxy_row)
         real_idx = self.table_model.map_to_real_index(proxy_row)
-        tl_row = self.timeline_model.row_for_real_index(real_idx)
-        if tl_row is not None:
-            self.timeline.setCurrentIndex(self.timeline_model.index(tl_row))
         self._update_preview()
 
     def _select_real_index(self, real_idx: int):
         proxy_row = self.table_model.map_from_real_index(real_idx)
         if proxy_row is not None:
             self._select_row(proxy_row)
-        tl_row = self.timeline_model.row_for_real_index(real_idx)
-        if tl_row is not None:
-            self.timeline.setCurrentIndex(self.timeline_model.index(tl_row))
         self._update_preview()
 
     def _sync_selection_from_table(self):
         real_idx = self._current_real_index_from_table()
         if real_idx is None:
             return
-        tl_row = self.timeline_model.row_for_real_index(real_idx)
-        if tl_row is not None:
-            self.timeline.setCurrentIndex(self.timeline_model.index(tl_row))
-        self._update_preview()
-
-    def _sync_selection_from_timeline(self):
-        real_idx = self._current_real_index_from_timeline()
-        if real_idx is None:
-            return
-        proxy_row = self.table_model.map_from_real_index(real_idx)
-        if proxy_row is not None:
-            self.table.selectRow(proxy_row)
         self._update_preview()
 
     def _update_preview(self):
         real_idx = self._current_real_index_from_table()
-        if real_idx is None:
-            real_idx = self._current_real_index_from_timeline()
         if real_idx is None:
             self.preview_label.setText("No screenshot")
             self.preview_label.setPixmap(QtGui.QPixmap())
@@ -655,7 +585,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self._select_row(0)
         else:
             self.table.clearSelection()
-            self.timeline.clearSelection()
             self._update_preview()
 
 
@@ -669,13 +598,13 @@ def main():
     win = MainWindow()
     win.show()
 
-    # Optional: Auto-load a sample file if present
+    # Optional: Auto-load a sample file if presentz
     sample_path = os.path.join(SCRIPT_DIR, "sample_actions.log")
     if os.path.exists(sample_path):
         try:
             win.manager.load_from_file(sample_path)
             win.table_model.refresh()
-            win.timeline_model.refresh()
+            win._refresh_timeline()
             if win.manager.events:
                 win._select_real_index(0)
             win.status.showMessage(f"Loaded sample_actions.log ({len(win.manager.events)} events)")

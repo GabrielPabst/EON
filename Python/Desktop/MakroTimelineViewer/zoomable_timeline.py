@@ -9,9 +9,9 @@ from graph_visualizer import GraphVisualizer
 from event_dialog import EventDialog
 
 class ZoomableTimeline(QWidget):
-    def __init__(self, action_log_path="actions.log", mouse_moves_log_path="mouse_moves.log"):
+    def __init__(self, action_log_path=None, mouse_moves_log_path="mouse_moves.log", event_data=None):
         super().__init__()
-        self.setMinimumSize(800, 400)
+        self.setMinimumSize(400,200)
         
         # Initialize components
         self.event_visualizer = EventVisualizer(self)
@@ -36,46 +36,65 @@ class ZoomableTimeline(QWidget):
         self.animation_time = 0
         
         # Load data
-        self.load_data(action_log_path, mouse_moves_log_path)
+        self.load_data(action_log_path, event_data, mouse_moves_log_path)
         
         self.setMouseTracking(True)
         
-    def load_data(self, action_log_path, mouse_moves_log_path):
+    def load_data(self, action_log_path, event_data, mouse_moves_log_path):
+        print(event_data)
         """Load event and movement data"""
         # Load events
-        self.events = EventLoader.load_events_from_log(action_log_path)
+        if action_log_path is None:
+            self.events = EventLoader.process_events(event_data)
+        else:
+            self.events = EventLoader.load_events_from_log(action_log_path)
         
         # Initialize scale and offset based on events
+        print("Loaded events:", self.events)
         if self.events:
-            event_times = [event["time"] for event in self.events]
-            min_time = min(event_times)
-            max_time = max(event_times)
-            time_range = max_time - min_time if max_time != min_time else 1.0
-            padding = time_range * 0.1
-            visible_range = time_range + (2 * padding)
-            self.scale = (self.width() * 0.8) / visible_range
-            self.scale = max(self.min_scale, min(self.max_scale, self.scale))
-            self.offset = (max_time + min_time) / 2
+            event_times = [float(event["time"]) for event in self.events if event.get("time") is not None]
+            if event_times:
+                min_time = min(event_times)
+                max_time = max(event_times)
+                time_range = max_time - min_time if max_time != min_time else 1.0
+                padding = time_range * 0.1
+                visible_range = time_range + (2 * padding)
+                self.scale = (self.width() * 0.8) / visible_range
+                self.scale = max(self.min_scale, min(self.max_scale, self.scale))
+                self.offset = (max_time + min_time) / 2
+                print(f"Initial scale: {self.scale}, offset: {self.offset}")
         
         # Load movement data
-        self.graph_times, self.graph_values = EventLoader.load_movements_per_second(mouse_moves_log_path)
+        try:
+            self.graph_times, self.graph_values = EventLoader.load_movements_per_second(mouse_moves_log_path)
+        except:
+            self.graph_times, self.graph_values = [], []
+        
+    def set_events(self, events):
+        self.events = events
+        self.update()
         
     def paintEvent(self, event):
         """Handle paint event"""
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.fillRect(self.rect(), QColor(20, 20, 20))
-        
-        width = self.width()
-        height = self.height()
-        center_y = height // 2
-        
-        # Draw components
-        self.graph_visualizer.draw_background_graph(painter, width, height, center_y)
-        self.draw_timeline(painter, width, height, center_y)
-        self.event_visualizer.draw_events(painter, width, height, center_y)
-        self.draw_time_labels(painter, width, height, center_y)
-        self.draw_info(painter)
+        try:
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.fillRect(self.rect(), QColor(20, 20, 20))
+            
+            width = self.width()
+            height = self.height()
+            center_y = height // 2
+            
+            # Draw components
+            self.graph_visualizer.draw_background_graph(painter, width, height, center_y)
+            self.draw_timeline(painter, width, height, center_y)
+            self.event_visualizer.draw_events(painter, width, height, center_y)
+            self.draw_time_labels(painter, width, height, center_y)
+            self.draw_info(painter)
+            
+        finally:
+            # Ensure painter is properly ended
+            painter.end()
         
     def draw_timeline(self, painter, width, height, center_y):
         """Draw the main timeline"""
@@ -232,7 +251,11 @@ class ZoomableTimeline(QWidget):
         """Handle mouse press"""
         if event.button() == Qt.LeftButton:
             self.mouse_press_pos = event.position()
-            self.dragging = True
+            if self.dragging:
+                self.dragging = False
+                self.last_mouse_pos = None
+            else:
+                self.dragging = True
             self.last_mouse_pos = event.position()
         event.accept()
         
@@ -252,70 +275,3 @@ class ZoomableTimeline(QWidget):
             self.last_mouse_pos = event.position()
             self.update()
         event.accept()
-        
-    def mouseReleaseEvent(self, event: QMouseEvent):
-        """Handle mouse release"""
-        if event.button() == Qt.LeftButton:
-            if self.mouse_press_pos is not None:
-                dx = abs(event.position().x() - self.mouse_press_pos.x())
-                dy = abs(event.position().y() - self.mouse_press_pos.y())
-                moved = (dx > 6) or (dy > 6)
-            else:
-                moved = False
-                
-            self.dragging = False
-            self.last_mouse_pos = None
-            press = self.mouse_press_pos
-            self.mouse_press_pos = None
-            
-            if not moved:
-                self.handle_click(event.position())
-        event.accept()
-        
-    def handle_click(self, pos):
-        """Handle mouse click on events"""
-        x = pos.x()
-        y = pos.y()
-        width = self.width()
-        height = self.height()
-        
-        # Ensure we have last draw metadata
-        clustered = getattr(self, "_last_clustered", None)
-        if clustered is None:
-            clustered = self.event_visualizer.cluster_events(width)
-            
-        # Hit test: first check boxes, then marker proximity
-        for ev in clustered:
-            di = ev.get('_draw_info')
-            if not di:
-                # Compute approx if no draw info available
-                ex = self.time_to_pixel(ev["time"], width)
-                box_w = 100
-                box_h = 40
-                box_x = ex - box_w//2
-                box_y = (height//2) - 80
-            else:
-                box_x = di['box_x']
-                box_y = di['box_y']
-                box_w = di['box_w']
-                box_h = di['box_h']
-                
-            # If click inside box
-            if (box_x <= x <= box_x + box_w) and (box_y <= y <= box_y + box_h):
-                self.open_event_dialog(ev)
-                return
-                
-        # If not inside any box, check markers
-        for ev in clustered:
-            di = ev.get('_draw_info')
-            marker_x = di['marker_x'] if di else self.time_to_pixel(ev['time'], width)
-            marker_y = di['marker_y'] if di else height//2
-            dist_sq = (marker_x - x)**2 + (marker_y - y)**2
-            if dist_sq <= (10 ** 2):
-                self.open_event_dialog(ev)
-                return
-                
-    def open_event_dialog(self, event_data):
-        """Open dialog with event details"""
-        dialog = EventDialog(event_data, self, self)
-        dialog.exec()

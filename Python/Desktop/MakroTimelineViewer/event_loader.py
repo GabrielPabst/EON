@@ -40,6 +40,38 @@ class EventLoader:
             return events
         except FileNotFoundError:
             return []
+    @staticmethod
+    def process_events(events_array):
+        events = []
+        first_time = None
+
+        for event in events_array:
+            try:
+                if first_time is None:
+                    first_time = event["time"]
+                relative_time = event["time"] - first_time
+
+                label = f"{event.get('type', '')} {event.get('key', '')}".strip()
+                if event.get('x') is not None and event.get('y') is not None:
+                    label += f" at ({event['x']}, {event['y']})"
+
+                if event.get('type') == 'press':
+                    color = QColor(255, 100, 100)
+                elif event.get('type') == 'release':
+                    color = QColor(100, 255, 100)
+                else:
+                    color = QColor(100, 100, 255)
+
+                events.append({
+                    "time": relative_time,
+                    "label": label,
+                    "color": color,
+                    "raw": event  # keep raw for later
+                })
+            except KeyError:
+                continue  # skip malformed events
+
+        return events
 
     @staticmethod
     def load_movements_per_second(log_file):
