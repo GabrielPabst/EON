@@ -66,6 +66,7 @@ class EventTableModel(QtCore.QAbstractTableModel):
         event = self.manager.events[row]
 
         if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
+            start_time = self.manager.events[0].time if self.manager.events else None
             col = index.column()
             if col == 0:
                 return row
@@ -74,7 +75,7 @@ class EventTableModel(QtCore.QAbstractTableModel):
             elif col == 2:
                 return event.key
             elif col == 3:
-                return human_time(event.time)
+                return human_time(event.time-start_time) + "s"
             elif col == 4:
                 return "" if event.x is None else str(event.x)
             elif col == 5:
@@ -266,7 +267,8 @@ class EventEditorDialog(QtWidgets.QDialog):
         if self.key_combo.findText(e.key) < 0:
             self.key_combo.addItem(e.key)
         self.key_combo.setCurrentText(e.key)
-        self.time_spin.setValue(float(e.time) if e.time is not None else 0.0)
+        start_time = self.manager.events[0].time if self.manager.events else None
+        self.time_spin.setValue(float(e.time)-start_time if e.time is not None else 0.0)
         if e.x is None:
             self.x_null.setChecked(True)
         else:
@@ -280,14 +282,16 @@ class EventEditorDialog(QtWidgets.QDialog):
     def values(self):
         x_val = None if self.x_null.isChecked() else int(self.x_spin.value())
         y_val = None if self.y_null.isChecked() else int(self.y_spin.value())
+        start_time = self.manager.events[0].time if self.manager.events else None
         return {
             "type": self.type_combo.currentText(),
             "key": self.key_combo.currentText().strip(),
-            "time": float(self.time_spin.value()),
+            "time": float(self.time_spin.value()+start_time),
             "x": x_val,
             "y": y_val,
             "screenshot": self.ss_edit.text().strip() or None,
         }
+        
 
     def _browse(self):
         fn, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Screenshot")
@@ -348,6 +352,7 @@ class MainWindow(QtWidgets.QMainWindow):
         right.setOrientation(QtCore.Qt.Vertical)
 
         # Timeline
+         
         self.timeline_model = TimelineListModel(self.manager)
         self.timeline = QtWidgets.QListView()
         self.timeline.setModel(self.timeline_model)
@@ -356,6 +361,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.timeline.setAlternatingRowColors(True)
         self.timeline.selectionModel().selectionChanged.connect(self._sync_selection_from_timeline)
         self.timeline.doubleClicked.connect(lambda _: self.edit_event())
+        
 
         right.addWidget(self._wrap_in_group("Timeline (vertical)", self.timeline))
 

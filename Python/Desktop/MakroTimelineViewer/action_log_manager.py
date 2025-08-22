@@ -32,7 +32,7 @@ class KeyType(Enum):
 
     MOUSE_X2 = "mouse_Button.x2"
 
-    
+
 
     # Letter keys (lowercase)
 
@@ -88,7 +88,7 @@ class KeyType(Enum):
 
     KEY_Z = "'z'"
 
-    
+
 
     # Number keys (main keyboard)
 
@@ -112,213 +112,183 @@ class KeyType(Enum):
 
     KEY_9 = "'9'"
 
-    
 
-    # Numpad keys
-
-    NUMPAD_0 = "Key.num_0"
-
-    NUMPAD_1 = "Key.num_1"
-
-    NUMPAD_2 = "Key.num_2"
-
-    NUMPAD_3 = "Key.num_3"
-
-    NUMPAD_4 = "Key.num_4"
-
-    NUMPAD_5 = "Key.num_5"
-
-    NUMPAD_6 = "Key.num_6"
-
-    NUMPAD_7 = "Key.num_7"
-
-    NUMPAD_8 = "Key.num_8"
-
-    NUMPAD_9 = "Key.num_9"
-
-    NUMPAD_DOT = "Key.num_decimal"
-
-    NUMPAD_PLUS = "Key.num_plus"
-
-    NUMPAD_MINUS = "Key.num_minus"
-
-    NUMPAD_MULTIPLY = "Key.num_multiply"
-
-    NUMPAD_DIVIDE = "Key.num_divide"
-
-    NUMPAD_ENTER = "Key.num_enter"
-
-    NUM_LOCK = "Key.num_lock"
-
-    
-
-    # Symbol keys (unshifted)
-
-    BACKTICK = "'`'"
-
-    MINUS = "'-'"
-
-    EQUALS = "'='"
-
-    LEFT_BRACKET = "'['"
-
-    RIGHT_BRACKET = "']'"
-
-    BACKSLASH = "'\\\\'"
-
-    SEMICOLON = "';'"
-
-    APOSTROPHE = "'\\''"
-
-    COMMA = "','"
-
-    PERIOD = "'.'"
-
-    SLASH = "'/'"
-
-    SPACE = "' '"
-
-    
-
-    
 
     # Function keys
 
-    F1 = "Key.f1"
+    KEY_F1 = "Key.f1"
 
-    F2 = "Key.f2"
+    KEY_F2 = "Key.f2"
 
-    F3 = "Key.f3"
+    KEY_F3 = "Key.f3"
 
-    F4 = "Key.f4"
+    KEY_F4 = "Key.f4"
 
-    F5 = "Key.f5"
+    KEY_F5 = "Key.f5"
 
-    F6 = "Key.f6"
+    KEY_F6 = "Key.f6"
 
-    F7 = "Key.f7"
+    KEY_F7 = "Key.f7"
 
-    F8 = "Key.f8"
+    KEY_F8 = "Key.f8"
 
-    F9 = "Key.f9"
+    KEY_F9 = "Key.f9"
 
-    F10 = "Key.f10"
+    KEY_F10 = "Key.f10"
 
-    F11 = "Key.f11"
+    KEY_F11 = "Key.f11"
 
-    F12 = "Key.f12"
+    KEY_F12 = "Key.f12"
 
-    F13 = "Key.f13"
 
-    F14 = "Key.f14"
-
-    F15 = "Key.f15"
-
-    F16 = "Key.f16"
-
-    F17 = "Key.f17"
-
-    F18 = "Key.f18"
-
-    F19 = "Key.f19"
-
-    F20 = "Key.f20"
-
-    F21 = "Key.f21"
-
-    F22 = "Key.f22"
-
-    F23 = "Key.f23"
-
-    F24 = "Key.f24"
-
-    
 
     # Special keys
 
-    ESCAPE = "Key.esc"
+    KEY_SPACE = "Key.space"
 
-    TAB = "Key.tab"
+    KEY_ENTER = "Key.enter"
 
-    CAPS_LOCK = "Key.caps_lock"
+    KEY_TAB = "Key.tab"
 
-    LEFT_SHIFT = "Key.shift_l"
+    KEY_BACKSPACE = "Key.backspace"
 
-    RIGHT_SHIFT = "Key.shift_r"
+    KEY_DELETE = "Key.delete"
 
-    LEFT_CTRL = "Key.ctrl_l"
+    KEY_ESC = "Key.esc"
 
-    RIGHT_CTRL = "Key.ctrl_r"
+    KEY_INSERT = "Key.insert"
 
-    LEFT_ALT = "Key.alt_l"
+    KEY_HOME = "Key.home"
 
-    RIGHT_ALT = "Key.alt_r"
+    KEY_END = "Key.end"
 
-    LEFT_CMD = "Key.cmd_l"
+    KEY_PAGE_UP = "Key.page_up"
 
-    RIGHT_CMD = "Key.cmd_r"
+    KEY_PAGE_DOWN = "Key.page_down"
 
-    MENU = "Key.menu"
+    KEY_CAPS_LOCK = "Key.caps_lock"
 
-    ENTER = "Key.enter"
+    KEY_NUM_LOCK = "Key.num_lock"
 
-    BACKSPACE = "Key.backspace"
+    KEY_SCROLL_LOCK = "Key.scroll_lock"
 
-    DELETE = "Key.delete"
+    KEY_PRINT_SCREEN = "Key.print_screen"
 
-    INSERT = "Key.insert"
+    KEY_PAUSE = "Key.pause"
 
-    
+    KEY_MENU = "Key.menu"
+
+
 
     # Arrow keys
 
-    UP = "Key.up"
+    KEY_LEFT = "Key.left"
 
-    DOWN = "Key.down"
+    KEY_RIGHT = "Key.right"
 
-    LEFT = "Key.left"
+    KEY_UP = "Key.up"
 
-    RIGHT = "Key.right"
+    KEY_DOWN = "Key.down"
 
-    
 
-    # Navigation keys
 
-    HOME = "Key.home"
+    # Modifier keys
 
-    END = "Key.end"
+    KEY_SHIFT_L = "Key.shift_l"
 
-    PAGE_UP = "Key.page_up"
+    KEY_SHIFT_R = "Key.shift_r"
 
-    PAGE_DOWN = "Key.page_down"
+    KEY_CTRL_L = "Key.ctrl_l"
 
-    
+    KEY_CTRL_R = "Key.ctrl_r"
 
-    # Lock keys
+    KEY_ALT_L = "Key.alt_l"
 
-    SCROLL_LOCK = "Key.scroll_lock"
+    KEY_ALT_R = "Key.alt_r"
 
-    PRINT_SCREEN = "Key.print_screen"
+    KEY_CMD_L = "Key.cmd_l"
 
-    PAUSE = "Key.pause"
+    KEY_CMD_R = "Key.cmd_r"
 
-    
 
-    # Media keys
 
-    VOLUME_UP = "Key.volume_up"
+    # Numpad keys
 
-    VOLUME_DOWN = "Key.volume_down"
+    KEY_NUM_0 = "Key.num_0"
 
-    VOLUME_MUTE = "Key.volume_mute"
+    KEY_NUM_1 = "Key.num_1"
 
-    MEDIA_PLAY_PAUSE = "Key.media_play_pause"
+    KEY_NUM_2 = "Key.num_2"
 
-    MEDIA_STOP = "Key.media_stop"
+    KEY_NUM_3 = "Key.num_3"
 
-    MEDIA_PREVIOUS = "Key.media_previous"
+    KEY_NUM_4 = "Key.num_4"
 
-    MEDIA_NEXT = "Key.media_next"
+    KEY_NUM_5 = "Key.num_5"
+
+    KEY_NUM_6 = "Key.num_6"
+
+    KEY_NUM_7 = "Key.num_7"
+
+    KEY_NUM_8 = "Key.num_8"
+
+    KEY_NUM_9 = "Key.num_9"
+
+    KEY_NUM_DECIMAL = "Key.num_decimal"
+
+    KEY_NUM_ENTER = "Key.num_enter"
+
+    KEY_NUM_ADD = "Key.num_add"
+
+    KEY_NUM_SUBTRACT = "Key.num_subtract"
+
+    KEY_NUM_MULTIPLY = "Key.num_multiply"
+
+    KEY_NUM_DIVIDE = "Key.num_divide"
+
+
+
+    # Symbol keys
+
+    KEY_BACKTICK = "'`'"
+
+    KEY_MINUS = "'-'"
+
+    KEY_EQUALS = "'='"
+
+    KEY_LEFT_BRACKET = "'['"
+
+    KEY_RIGHT_BRACKET = "']'"
+
+    KEY_BACKSLASH = "'\\'"
+
+    KEY_SEMICOLON = "';'"
+
+    KEY_QUOTE = "'\''"
+
+    KEY_COMMA = "','"
+
+    KEY_PERIOD = "'.'"
+
+    KEY_SLASH = "'/'"
+
+
+
+    # Media keys (if supported by the system)
+
+    KEY_VOLUME_MUTE = "Key.media_volume_mute"
+
+    KEY_VOLUME_DOWN = "Key.media_volume_down"
+
+    KEY_VOLUME_UP = "Key.media_volume_up"
+
+    KEY_MEDIA_PLAY_PAUSE = "Key.media_play_pause"
+
+    KEY_MEDIA_NEXT = "Key.media_next"
+
+    KEY_MEDIA_PREVIOUS = "Key.media_previous"
+
+
 
 
 
@@ -413,6 +383,9 @@ class ActionsLogManager:
             self.load_from_file(log_file_path)
 
     
+    def _sort_events_by_time(self) -> None:
+        """Keep events sorted by their time"""
+        self.events.sort(key=lambda e: e.time)
 
     def load_from_file(self, file_path: str) -> None:
 
@@ -437,6 +410,8 @@ class ActionsLogManager:
                         data = json.loads(line)
 
                         self.events.append(ActionEvent.from_dict(data))
+                        
+                        self._sort_events_by_time()
 
         except FileNotFoundError:
 
@@ -548,7 +523,7 @@ class ActionsLogManager:
 
         )
 
-        
+
 
         # Insert at specified index or append
 
@@ -559,13 +534,14 @@ class ActionsLogManager:
                 raise ValidationError(f"Invalid insert index: {insert_index}")
 
             self.events.insert(insert_index, event)
-
+            
+            self._sort_events_by_time()
             return insert_index
 
         else:
 
             self.events.append(event)
-
+            self._sort_events_by_time()
             return len(self.events) - 1
 
     
@@ -605,6 +581,7 @@ class ActionsLogManager:
         try:
 
             self._validate_event_modification(index, original_event)
+            self._sort_events_by_time()
 
         except ValidationError:
 
@@ -650,7 +627,7 @@ class ActionsLogManager:
 
             del self.events[idx]
 
-        
+        self._sort_events_by_time()
 
         return sorted(deleted_indices)
 
