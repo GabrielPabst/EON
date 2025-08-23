@@ -6,7 +6,7 @@ from PySide6.QtGui import QPainter, QPen, QColor, QFont, QWheelEvent, QMouseEven
 from event_loader import EventLoader
 from event_visualizer import EventVisualizer
 from graph_visualizer import GraphVisualizer
-from event_dialog import EventDialog
+
 
 class ZoomableTimeline(QWidget):
     def __init__(self, action_log_path=None, mouse_moves_log_path="mouse_moves.log", event_data=None):
@@ -191,7 +191,7 @@ class ZoomableTimeline(QWidget):
             f"Scale: 1 pixel = {1/self.scale:.3f} seconds",
             f"Visible range: {self.width()/self.scale:.1f} seconds",
             f"Offset: {self.format_time(self.offset)}",
-            "Mouse: Drag to pan, Wheel to zoom, Click events for details"
+            "Mouse: Drag to pan, Wheel to zoom"
         ]
         for i, line in enumerate(info_lines):
             painter.drawText(10, 20 + i * 15, line)

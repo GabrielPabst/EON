@@ -298,7 +298,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Timeline - Initialize with empty data first
         from zoomable_timeline import ZoomableTimeline
         self.timeline = ZoomableTimeline(event_data=[], mouse_moves_log_path="mouse_moves.log")
-        right.addWidget(self._wrap_in_group("Timeline (vertical)", self.timeline))
+        right.addWidget(self._wrap_in_group("zoomable timeline", self.timeline))
 
         # Screenshot preview
         self.preview_label = QtWidgets.QLabel("No screenshot")
