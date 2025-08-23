@@ -134,6 +134,8 @@ class EventTableModel(QtCore.QAbstractTableModel):
 # -----------------------------
 # Event Editor Dialog
 # -----------------------------
+# Modified EventEditorDialog class with automatic coordinate field handling
+
 class EventEditorDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, *, manager: ActionsLogManager, event: Optional[ActionEvent] = None):
         super().__init__(parent)
@@ -143,12 +145,16 @@ class EventEditorDialog(QtWidgets.QDialog):
         self._populate_keys()
         if event:
             self._load_event(event)
+        # Set initial state based on current type
+        self._on_type_changed()
 
     def _build_ui(self):
         layout = QtWidgets.QFormLayout(self)
 
         self.type_combo = QtWidgets.QComboBox()
         self.type_combo.addItems([EventType.PRESS.value, EventType.RELEASE.value])
+        # Connect the type combo to handle coordinate field state
+        self.type_combo.currentTextChanged.connect(self._on_type_changed)
 
         self.key_combo = QtWidgets.QComboBox()
         self.key_combo.setEditable(True)
@@ -201,6 +207,34 @@ class EventEditorDialog(QtWidgets.QDialog):
         self.setLayout(layout)
         self.setMinimumWidth(420)
 
+    def _on_type_changed(self):
+        """Handle coordinate fields based on event type"""
+        current_type = self.type_combo.currentText().lower()
+        is_mouse_event = "mouse" in current_type
+        
+        # Enable/disable coordinate fields
+        self.x_spin.setEnabled(is_mouse_event)
+        self.x_null.setEnabled(is_mouse_event)
+        self.y_spin.setEnabled(is_mouse_event)
+        self.y_null.setEnabled(is_mouse_event)
+        
+        # Apply visual styling for disabled state
+        if not is_mouse_event:
+            # Set coordinates to None and check the None checkboxes
+            self.x_null.setChecked(True)
+            self.y_null.setChecked(True)
+            # Apply grayed out style
+            self.x_spin.setStyleSheet("QSpinBox { color: #666; background: #1a1a1a; }")
+            self.y_spin.setStyleSheet("QSpinBox { color: #666; background: #1a1a1a; }")
+            self.x_null.setStyleSheet("QCheckBox { color: #666; }")
+            self.y_null.setStyleSheet("QCheckBox { color: #666; }")
+        else:
+            # Restore normal styling
+            self.x_spin.setStyleSheet("")
+            self.y_spin.setStyleSheet("")
+            self.x_null.setStyleSheet("")
+            self.y_null.setStyleSheet("")
+
     def _populate_keys(self):
         keys = self.manager.get_valid_keys()
         self.key_combo.addItems(keys)
@@ -213,19 +247,33 @@ class EventEditorDialog(QtWidgets.QDialog):
         self.key_combo.setCurrentText(e.key)
         start_time = self.manager.events[0].time if self.manager.events else None
         self.time_spin.setValue(float(e.time)-start_time if e.time is not None else 0.0)
+        
         if e.x is None:
             self.x_null.setChecked(True)
         else:
+            self.x_null.setChecked(False)
             self.x_spin.setValue(e.x)
+            
         if e.y is None:
             self.y_null.setChecked(True)
         else:
+            self.y_null.setChecked(False)
             self.y_spin.setValue(e.y)
+            
         self.ss_edit.setText(e.screenshot or "")
 
     def values(self):
-        x_val = None if self.x_null.isChecked() else int(self.x_spin.value())
-        y_val = None if self.y_null.isChecked() else int(self.y_spin.value())
+        current_type = self.type_combo.currentText().lower()
+        is_mouse_event = "mouse" in current_type
+        
+        # For non-mouse events, always return None for coordinates
+        if not is_mouse_event:
+            x_val = None
+            y_val = None
+        else:
+            x_val = None if self.x_null.isChecked() else int(self.x_spin.value())
+            y_val = None if self.y_null.isChecked() else int(self.y_spin.value())
+            
         start_time = self.manager.events[0].time if self.manager.events else None
 
         return {
@@ -236,18 +284,16 @@ class EventEditorDialog(QtWidgets.QDialog):
             "y": y_val,
             "screenshot": self.ss_edit.text().strip() or None,
         }
-        
 
     def _browse(self):
         fn, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Screenshot")
         if fn:
             self.ss_edit.setText(fn)
 
-
 # -----------------------------
-# Main Window
+# Frontend
 # -----------------------------
-class MainWindow(QtWidgets.QMainWindow):
+class ActionLogFrontend(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Actions Log Viewer ✨")
@@ -297,7 +343,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Timeline - Initialize with empty data first
         from zoomable_timeline import ZoomableTimeline
-        self.timeline = ZoomableTimeline(event_data=[], mouse_moves_log_path="mouse_moves.log")
+        self.timeline = ZoomableTimeline(event_data=[], mouse_moves_log_path="")
         right.addWidget(self._wrap_in_group("zoomable timeline", self.timeline))
 
         # Screenshot preview
@@ -410,8 +456,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 })
             
             # Update timeline with new data using load_data method
-            print("Refreshing timeline with events:", timeline_events)
-            self.timeline.load_data(None, timeline_events, "mouse_moves.log")
+            self.timeline.load_data(None, timeline_events, self.manager.log_file_path_movements)
 
     # --------------
     # Actions
@@ -587,32 +632,3 @@ class MainWindow(QtWidgets.QMainWindow):
             self.table.clearSelection()
             self._update_preview()
 
-
-# -----------------------------
-# Entry Point
-# -----------------------------
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    app.setApplicationName("Actions Log Viewer")
-
-    win = MainWindow()
-    win.show()
-
-    # Optional: Auto-load a sample file if presentz
-    sample_path = os.path.join(SCRIPT_DIR, "sample_actions.log")
-    if os.path.exists(sample_path):
-        try:
-            win.manager.load_from_file(sample_path)
-            win.table_model.refresh()
-            win._refresh_timeline()
-            if win.manager.events:
-                win._select_real_index(0)
-            win.status.showMessage(f"Loaded sample_actions.log ({len(win.manager.events)} events)")
-        except Exception:
-            pass
-
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    main()

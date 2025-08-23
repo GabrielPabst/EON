@@ -41,7 +41,6 @@ class ZoomableTimeline(QWidget):
         self.setMouseTracking(True)
         
     def load_data(self, action_log_path, event_data, mouse_moves_log_path):
-        print(event_data)
         """Load event and movement data"""
         # Load events
         if action_log_path is None:
@@ -50,7 +49,6 @@ class ZoomableTimeline(QWidget):
             self.events = EventLoader.load_events_from_log(action_log_path)
         
         # Initialize scale and offset based on events
-        print("Loaded events:", self.events)
         if self.events:
             event_times = [float(event["time"]) for event in self.events if event.get("time") is not None]
             if event_times:
@@ -62,8 +60,6 @@ class ZoomableTimeline(QWidget):
                 self.scale = (self.width() * 0.8) / visible_range
                 self.scale = max(self.min_scale, min(self.max_scale, self.scale))
                 self.offset = (max_time + min_time) / 2
-                print(f"Initial scale: {self.scale}, offset: {self.offset}")
-        
         # Load movement data
         try:
             self.graph_times, self.graph_values = EventLoader.load_movements_per_second(mouse_moves_log_path)
