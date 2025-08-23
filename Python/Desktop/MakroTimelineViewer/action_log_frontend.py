@@ -4,6 +4,9 @@ from typing import Optional, List
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+import zipfile
+import tempfile
+
 # Ensure we can import user's backend module when running next to this file
 # If action_log_manager.py is in the same folder, this works. Otherwise, adjust sys.path as needed.
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -461,21 +464,48 @@ class ActionLogFrontend(QtWidgets.QMainWindow):
     # --------------
     # Actions
     # --------------
+    
     def open_file(self):
-        fn, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open actions.log", filter="Log files (*.log *.txt);;All files (*)")
+        fn, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, 
+            "Open makros", 
+            filter="ZIP files (*.zip);;Log files (*.log *.txt);;All files (*)"
+        )
         if not fn:
             return
+        
         try:
-            self.manager.load_from_file(fn)
-            self.table_model.refresh()
+            if fn.lower().endswith('.zip'):
+                # Handle ZIP file
+                with zipfile.ZipFile(fn, 'r') as zip_file:
+                    # Check if required files exist in the ZIP
+                    zip_contents = zip_file.namelist()
+                    
+                    if 'actions.log' not in zip_contents:
+                        raise FileNotFoundError("actions.log not found in ZIP file")
+                    if 'mouse_moves.log' not in zip_contents:
+                        raise FileNotFoundError("mouse_moves.log not found in ZIP file")
+                    
+                    # Create temporary directory to extract files
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        # Extract the required files
+                        actions_log_path = zip_file.extract('actions.log', temp_dir)
+                        mouse_moves_log_path = zip_file.extract('mouse_moves.log', temp_dir)
+                        # Load from extracted files
+                        self.manager.load_from_file(actions_log_path, mouse_moves_log_path)
+                        self._refresh_timeline()
+            else:
+                # Handle regular log file (keep existing behavior for backward compatibility)
+                self.manager.load_from_file(fn, "")
             
-            # Update timeline with events
-            self._refresh_timeline()
+            # Refresh the interface
+            self.table_model.refresh()
             
             self.status.showMessage(f"Loaded {len(self.manager.events)} events from {os.path.basename(fn)}")
             if self.manager.events:
                 self._select_row(0)
             self._update_preview()
+                
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error", str(e))
 
