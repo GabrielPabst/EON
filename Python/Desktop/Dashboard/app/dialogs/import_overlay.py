@@ -1,13 +1,15 @@
 from __future__ import annotations
+
+import os
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QPushButton, QFileDialog,
     QWidget, QHBoxLayout, QProgressBar, QFrame, QSizePolicy
 )
-from PySide6.QtCore import Qt, QTimer, Signal
 
 
 class DropZone(QFrame):
-    fileDropped = Signal(str)
+    pathDropped = Signal(str)
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
@@ -17,13 +19,11 @@ class DropZone(QFrame):
         self.setMinimumHeight(180)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # Neues Layout-Objekt
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setAlignment(Qt.AlignCenter)
 
-        # Text
-        self.label = QLabel("Datei hier reinziehen")
+        self.label = QLabel("Drop ZIP or folder here")
         self.label.setStyleSheet("color: #FFB238; font-size: 16px; font-weight: bold;")
         self.main_layout.addWidget(self.label)
 
@@ -43,7 +43,7 @@ class DropZone(QFrame):
         }
         """)
 
-    # Drag & drop plumbing
+    # Drag & drop
     def dragEnterEvent(self, e):
         if e.mimeData().hasUrls():
             e.acceptProposedAction()
@@ -64,19 +64,24 @@ class DropZone(QFrame):
         self.style().unpolish(self); self.style().polish(self)
 
         urls = [u.toLocalFile() for u in e.mimeData().urls() if u.toLocalFile()]
-        if urls:
-            self.fileDropped.emit(urls[0])
+        if not urls:
+            return
+        p = urls[0]
+        # Only accept ZIP files or directories
+        if os.path.isdir(p) or p.lower().endswith(".zip"):
+            self.pathDropped.emit(p)
+        else:
+            # could show a gentle hint via parent dialog label if desired
+            pass
 
 
 class ImportOverlay(QDialog):
     """
-    Kompakter Import-Dialog:
-      - zentriert über dem Hauptfenster
-      - große gestrichelte Drop-Zone (ohne Text)
-      - 'Datei wählen…' Button
-      - kleine Progressbar + Status
-      - Esc/✕ schließt
-    Ergebnis: self.file_path (oder None)
+    Compact import dialog:
+      - Accepts ZIP or folder (macro package)
+    Result:
+      self.selected_path: str | None
+      self.selected_kind: str in {"zip","folder"} | None
     """
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
@@ -84,19 +89,20 @@ class ImportOverlay(QDialog):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
-        self.file_path: str | None = None
+        self.selected_path: str | None = None
+        self.selected_kind: str | None = None
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
 
-        # halbtransparentes Backdrop + Card
+        # Backdrop + card
         backdrop = QWidget(self)
         backdrop.setObjectName("backdrop")
         ol = QVBoxLayout(backdrop); ol.setContentsMargins(0, 0, 0, 0)
 
         container = QWidget(backdrop)
         container.setObjectName("importOverlayContainer")
-        container.setFixedSize(560, 360)
+        container.setFixedSize(560, 380)
         ol.addWidget(container, 0, Qt.AlignCenter)
         outer.addWidget(backdrop)
 
@@ -106,26 +112,27 @@ class ImportOverlay(QDialog):
 
         # Header
         header = QHBoxLayout(); header.setSpacing(8)
-        title = QLabel("Makro importieren"); title.setObjectName("importTitle")
+        title = QLabel("Import macro (ZIP/Folder)")
+        title.setObjectName("importTitle")
         btnClose = QPushButton("✕"); btnClose.setObjectName("closeBtn"); btnClose.clicked.connect(self.reject)
         header.addWidget(title); header.addStretch(1); header.addWidget(btnClose)
 
-        # --- Drop-Zone (nur Umrandung) ---
+        # Drop-zone
         self.dropzone = DropZone()
-        self.dropzone.fileDropped.connect(self._start_progress_and_accept)
+        self.dropzone.pathDropped.connect(self._start_progress_and_accept)
 
-        # Buttons
+        # Buttons (ZIP / Folder only)
         buttons = QHBoxLayout(); buttons.setSpacing(10)
-        btnFile = QPushButton("Datei wählen…"); btnFile.clicked.connect(self._browse_file)
-        buttons.addStretch(1); buttons.addWidget(btnFile); buttons.addStretch(1)
+        btnZip = QPushButton("Choose ZIP…"); btnZip.clicked.connect(self._browse_zip)
+        btnDir = QPushButton("Choose folder…"); btnDir.clicked.connect(self._browse_folder)
+        buttons.addStretch(1); buttons.addWidget(btnZip); buttons.addWidget(btnDir); buttons.addStretch(1)
 
-        # Progress + Status
+        # Progress + status
         self.progress = QProgressBar(); self.progress.setMinimum(0); self.progress.setMaximum(100)
         self.progress.setValue(0); self.progress.setTextVisible(False); self.progress.setObjectName("importProgress")
         self.status = QLabel(""); self.status.setAlignment(Qt.AlignCenter); self.status.setObjectName("statusMsg")
 
         lay.addLayout(header)
-        # Die Zone bekommt Platz (expandiert), Button danach
         lay.addWidget(self.dropzone, 1)
         lay.addLayout(buttons)
         lay.addWidget(self.progress)
@@ -146,7 +153,7 @@ class ImportOverlay(QDialog):
         QProgressBar::chunk { background:#FFB238; border-radius:8px; }
         """)
 
-    # Zentriert über Parent anzeigen
+    # Center over parent
     def showEvent(self, e):
         super().showEvent(e)
         parent = self.parentWidget()
@@ -155,25 +162,39 @@ class ImportOverlay(QDialog):
             fg.moveCenter(parent.frameGeometry().center())
             self.move(fg.topLeft())
 
-    # Esc schließt
+    # ESC closes
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
             self.reject()
         else:
             super().keyPressEvent(e)
 
-    # Dateiauswahl
-    def _browse_file(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Makro-Datei wählen", "", "Log-Dateien (*.log);;Alle Dateien (*.*)"
-        )
+    # Browsers
+    def _browse_zip(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Choose macro ZIP", "", "ZIP files (*.zip)")
         if path:
             self._start_progress_and_accept(path)
 
-    # Mini-Progress & Accept
+    def _browse_folder(self):
+        path = QFileDialog.getExistingDirectory(self, "Choose macro folder", "")
+        if path:
+            self._start_progress_and_accept(path)
+
+    # Progress & accept
     def _start_progress_and_accept(self, path: str):
-        self.file_path = path
-        self.status.setText("Importiere…")
+        # only accept ZIP or folder
+        if os.path.isdir(path):
+            kind = "folder"
+        elif path.lower().endswith(".zip"):
+            kind = "zip"
+        else:
+            self.status.setText("Only ZIP or folder is supported.")
+            return
+
+        self.selected_path = path
+        self.selected_kind = kind
+
+        self.status.setText("Importing…")
         self.progress.setValue(12)
 
         steps = [28, 52, 78, 100]
