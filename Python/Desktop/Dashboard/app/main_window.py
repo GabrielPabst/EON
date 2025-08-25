@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
     QLineEdit, QComboBox, QLabel, QPushButton, QTableWidget, QTableWidgetItem,
     QHeaderView, QStatusBar, QSplitter, QSizePolicy, QApplication,
-    QSystemTrayIcon, QMenu, QInputDialog
+    QSystemTrayIcon, QMenu, QInputDialog, QDialog
 )
 
 from .widgets.side_nav import SideNav
