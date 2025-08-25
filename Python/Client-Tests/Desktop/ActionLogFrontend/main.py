@@ -10,7 +10,7 @@ from action_log_frontend import ActionLogFrontend
 def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("Actions Log Viewer")
-
+    #app.setStyle("Fusion")
     win = ActionLogFrontend()
     win.show()
 

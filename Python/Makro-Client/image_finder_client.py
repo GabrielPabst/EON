@@ -139,7 +139,7 @@ class ImageFinderClient:
             cv2.imwrite(output_path, screenshot)
         return screenshot
 
-    def run(self, icon_path: str, screenshot_path: str, output_path: str = "result.jpg", region: Optional[Tuple[int, int, int, int]] = None):
+    def run(self, icon_path: str, screenshot_path: str, output_path: str = "", region: Optional[Tuple[int, int, int, int]] = None):
         start_time = time.time()
         match = self.find(icon_path, screenshot_path, region=region)
         process_time = time.time() - start_time
@@ -150,6 +150,7 @@ class ImageFinderClient:
         print(f"Best match center at (x={center_x}, y={center_y})")
         print(f"Match confidence: {confidence:.2f}")
         print(f"Processing time: {process_time:.3f} seconds")
-        self.draw_match(screenshot_path, match, output_path)
+        if output_path != "":  
+            self.draw_match(screenshot_path, match, output_path)
         print(f"Result saved to {output_path}")
         return match

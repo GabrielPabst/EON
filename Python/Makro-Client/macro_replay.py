@@ -211,13 +211,13 @@ class MouseScreenshotFinder:
         while attempt < self.MAX_ATTEMPTS:
             # 1. Try small region
             print(icon_path, screenshot_path, region)
-            match = self.finder.run(icon_path, screenshot_path, region=region, output_path="results/result.jpg" )
+            match = self.finder.run(icon_path, screenshot_path, region=region, output_path="" )
             if match is not None and match[-1] >= self.CONFIDENCE_THRESHOLD:
                 print(f"Found match in region on attempt {attempt+1} with confidence {match[-1]:.2f}")
                 print(f"Match details: {match}")
                 return match
             # 2. Try whole screenshot
-            match = self.finder.run(icon_path, screenshot_path, region=None,  output_path="results/result.jpg")
+            match = self.finder.run(icon_path, screenshot_path, region=None,  output_path="")
             if match is not None and match[-1] >= self.CONFIDENCE_THRESHOLD:
                 print(f"Found match in full screenshot on attempt {attempt+1} with confidence {match[-1]:.2f}")
                 print(f"Match details: {match}")
@@ -233,7 +233,7 @@ class MacroReplayManager:
     def __init__(self, mouse_log: str = MOUSE_LOG, actions_log: str = ACTIONS_LOG):
         self.mouse_replay = MouseReplay(mouse_log)
         self.keyboard_replay = KeyboardReplay(actions_log)
-
+        
     def replay_all(self):
         all_events = sorted(
             self.mouse_replay.events + self.keyboard_replay.events,
