@@ -16,7 +16,6 @@ env/
 venv/
 ENV/
 *.sqlite3
-*.log
 
 # VSCode
 .vscode/
@@ -52,7 +51,6 @@ obj/
 *.dbmdl
 *.pdb
 *.cache
-*.log
 
 # OS generated files
 .DS_Store

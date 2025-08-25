@@ -1,0 +1,9 @@
+{"type": "press", "key": "mouse_Button.left", "x": 65, "y": 23, "time": 0.0, "screenshot": "screenshots\\screenshot_1753098358629_65_23.png"}
+{"type": "release", "key": "mouse_Button.left", "x": 257, "y": 13, "time": 3.1053080558776855, "screenshot": null}
+{"type": "press", "key": "mouse_Button.left", "x": 69, "y": 24, "time": 7.057677745819092, "screenshot": "screenshots\\screenshot_1753098365686_69_24.png"}
+{"type": "release", "key": "mouse_Button.left", "x": 70, "y": 24, "time": 7.155082941055298, "screenshot": null}
+{"type": "press", "key": "mouse_Button.left", "x": 67, "y": 22, "time": 7.853813171386719, "screenshot": "screenshots\\screenshot_1753098366482_67_22.png"}
+{"type": "release", "key": "mouse_Button.left", "x": 57, "y": 21, "time": 10.424818277359009, "screenshot": null}
+{"type": "press", "key": "mouse_Button.left", "x": 54, "y": 16, "time": 11.87981367111206, "screenshot": "screenshots\\screenshot_1753098370508_54_16.png"}
+{"type": "release", "key": "mouse_Button.left", "x": 54, "y": 16, "time": 11.931875228881836, "screenshot": null}
+{"type": "press", "key": "'q'", "x": null, "y": null, "time": 13.683741092681885, "screenshot": null}
