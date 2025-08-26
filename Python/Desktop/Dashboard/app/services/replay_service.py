@@ -1,11 +1,13 @@
+# app/services/replay_service.py
 from __future__ import annotations
-import sys
+
+import json
+import re
 import signal
 import subprocess
+import sys
 from pathlib import Path
-from typing import Optional, Callable
-from string import Template
-from textwrap import dedent
+from typing import Optional, Callable, List, Dict, Any, Tuple
 
 from .macro_store import MacroStore
 
@@ -14,38 +16,48 @@ class ReplayError(Exception):
     pass
 
 
+_SCREENSHOT_RE = re.compile(r"screenshot_(\d+)_([-\d]+)_([-\d]+)\.png$", re.IGNORECASE)
+
+
+def _parse_name(fname: str) -> Optional[Tuple[int, int, int]]:
+    """
+    Extrahiert (ts, x, y) aus 'screenshot_<ts>_<x>_<y>.png'.
+    Gibt None zurück, wenn das Schema nicht passt.
+    """
+    m = _SCREENSHOT_RE.search(fname)
+    if not m:
+        return None
+    ts = int(m.group(1))
+    x = int(m.group(2))
+    y = int(m.group(3))
+    return ts, x, y
+
+
 class ReplayService:
-    def __init__(self, store: MacroStore, desktop_root: Optional[Path] = None) -> None:
+    """
+    Dünner Wrapper um den externen Makro-Client:
+    - nutzt MacroReplayManager (aus macro_replay.py) unverändert
+    - ruft replay_all() auf
+    - setzt cwd = Makro-Ordner (für relative 'screenshots/' & 'results/')
+    - legt 'screenshots'/'results' vorsorglich an
+    - NORMALISIERT die 'screenshot'-Pfade in actions.log -> actions.fixed.log
+      (sucht bestes vorhandenes Icon im screenshots-Ordner)
+    """
+
+    def __init__(self, store: MacroStore, client_dir: Optional[Path] = None) -> None:
         self.store = store
         self._proc: Optional[subprocess.Popen] = None
         self._running_id: Optional[str] = None
         self.on_started: Optional[Callable[[str], None]] = None
         self.on_finished: Optional[Callable[[str, Optional[str]], None]] = None
 
-        # Makro-Client finden
-        here = Path(__file__).resolve()
-        desktop_dir = here.parents[3]
-        dashboard_dir = here.parents[2]
-        python_dir = desktop_dir.parent
+        self.client_dir: Path = client_dir or self._find_client_dir()
+        if not (self.client_dir / "macro_replay.py").exists():
+            raise ReplayError(
+                f"Makro-Client unvollständig: {self.client_dir}\\macro_replay.py fehlt"
+            )
 
-        candidates = [
-            desktop_dir / "Makro-Client",
-            python_dir / "Makro-Client",
-            dashboard_dir.parent / "Makro-Client",
-        ]
-        p = desktop_dir
-        for _ in range(4):
-            p = p.parent
-            if p.name.lower() == "python":
-                candidates.append(p / "Makro-Client")
-                break
-
-        self.makro_client_dir: Optional[Path] = next((c for c in candidates if c.exists()), None)
-        if self.makro_client_dir is None:
-            tried = " | ".join(str(c) for c in candidates)
-            raise ReplayError(f"Makro-Client nicht gefunden. Versuchte Pfade: {tried}")
-        if not (self.makro_client_dir / "macro_replay.py").exists():
-            raise ReplayError(f"Makro-Client unvollständig: {self.makro_client_dir}\\macro_replay.py fehlt")
+    # ---------------- public API ----------------
 
     def is_running(self) -> bool:
         return self._proc is not None and self._proc.poll() is None
@@ -60,139 +72,20 @@ class ReplayService:
         if not actions.exists() or not moves.exists():
             raise ReplayError(f"Benötigt: {actions.name} + {moves.name} in {macro_dir}")
 
-        tmpl = Template(dedent("""
-            import sys, time, threading, json
-            sys.path.insert(0, $CLIENT_DIR)
+        # Vorsorglich: Ordner anlegen, falls der Client dort schreibt
+        (macro_dir / "screenshots").mkdir(parents=True, exist_ok=True)
+        (macro_dir / "results").mkdir(parents=True, exist_ok=True)
 
-            import pyautogui
-            pyautogui.FAILSAFE = False
+        # Actions-Datei vorbereiten (alle Icon-Pfade auf existierende Dateien mappen)
+        fixed_actions = self._prepare_actions_file(macro_dir, actions)
 
-            from pynput.mouse import Controller as MouseCtl, Button
-            from pynput.keyboard import Controller as KeyCtl, Key, KeyCode
-            from macro_replay import MacroReplayManager
-
-            mouse = MouseCtl()
-            keyboard = KeyCtl()
-
-            def load_actions(path):
-                evs = []
-                with open(path, 'r', encoding='utf-8', errors='ignore') as f:
-                    for line in f:
-                        line=line.strip()
-                        if not line:
-                            continue
-                        try:
-                            obj = json.loads(line)
-                            t = obj.get('time')
-                            if t is None:
-                                continue
-                            typ = obj.get('type')
-                            key = obj.get('key')
-
-                            if typ in ('press','release') and isinstance(key, str) and key.startswith('mouse_Button.'):
-                                btn_name = key.split('.',1)[1]
-                                evs.append({'kind':'mouse_'+typ, 'button':btn_name, 'time':t})
-                            elif typ == 'click':
-                                btn = obj.get('button','left')
-                                cnt = int(obj.get('count',1) or 1)
-                                evs.append({'kind':'mouse_click', 'button':btn, 'count':cnt, 'time':t})
-                            elif typ in ('press','release'):
-                                evs.append({'kind':'key_'+typ, 'key':key, 'time':t})
-                        except Exception:
-                            pass
-                return evs
-
-            SPECIAL = {
-                'enter':'enter','return':'enter','space':'space','tab':'tab',
-                'esc':'esc','escape':'esc','backspace':'backspace','delete':'delete',
-                'home':'home','end':'end','pageup':'page_up','pagedown':'page_down',
-                'left':'left','right':'right','up':'up','down':'down'
-            }
-
-            def normalize_key_string(s: str) -> str:
-                s = s.strip()
-                if len(s) >= 2 and s[0] == s[-1] and s[0] in ('\"', \"'\"):
-                    s = s[1:-1]  # Strip Quotes: "'q'" -> q
-                return s
-
-            def resolve_key(k):
-                if isinstance(k, str):
-                    s = normalize_key_string(k)
-                    if s.startswith('Key.'):
-                        name = s.split('.',1)[1]
-                        return getattr(Key, name, None)
-                    if s in SPECIAL:
-                        return getattr(Key, SPECIAL[s], None)
-                    if s.startswith('f') and s[1:].isdigit():
-                        return getattr(Key, s, None)
-                    if len(s) == 1:
-                        return KeyCode.from_char(s)
-                    return None
-                return None
-
-            def do_actions(events, start_time, first_event_time):
-                events = sorted(events, key=lambda e: e['time'])
-                for e in events:
-                    target = (e['time'] - first_event_time)
-                    now = time.perf_counter() - start_time
-                    delay = target - now
-                    if delay > 0:
-                        time.sleep(delay)
-
-                    kind = e['kind']
-                    try:
-                        if kind in ('mouse_press','mouse_release'):
-                            btn = {'left':Button.left, 'right':Button.right, 'middle':Button.middle}.get(e.get('button','left'), Button.left)
-                            if kind == 'mouse_press':
-                                mouse.press(btn)
-                            else:
-                                mouse.release(btn)
-                            print('[mouse]', kind, e.get('button'))
-                        elif kind == 'mouse_click':
-                            btn = {'left':Button.left, 'right':Button.right, 'middle':Button.middle}.get(e.get('button','left'), Button.left)
-                            cnt = int(e.get('count',1) or 1)
-                            for _ in range(cnt):
-                                mouse.click(btn)
-                            print('[mouse] click x'+str(cnt), e.get('button'))
-                        elif kind in ('key_press','key_release'):
-                            key_obj = resolve_key(e.get('key'))
-                            if key_obj is None:
-                                print('[key] unknown', e.get('key'))
-                                continue
-                            if kind == 'key_press':
-                                keyboard.press(key_obj)
-                            else:
-                                keyboard.release(key_obj)
-                            print('[key]', kind, e.get('key'))
-                    except Exception as ex:
-                        print('Action error:', ex)
-
-            m = MacroReplayManager(mouse_log=$MOUSE_LOG, actions_log=$ACTIONS_LOG)
-            mr = m.mouse_replay
-            action_events = load_actions($ACTIONS_LOG)
-
-            print('Using logs:'); print('  actions:', $ACTIONS_LOG); print('  mouse  :', $MOUSE_LOG)
-            print('Precount -> moves:', len(mr.events), 'actions:', len(action_events))
-            if not (mr.events or action_events):
-                print('Keine Events gefunden.'); import sys; sys.exit(0)
-
-            first_event_time = min(([e['time'] for e in mr.events] or [float('inf')]) +
-                                   ([e['time'] for e in action_events] or [float('inf')]))
-            start_time = time.perf_counter()
-
-            t_moves = threading.Thread(target=mr.replay, args=(start_time, first_event_time), daemon=True)
-            t_actions = threading.Thread(target=do_actions, args=(action_events, start_time, first_event_time), daemon=True)
-
-            print('Replaying ...')
-            t_moves.start(); t_actions.start()
-            t_moves.join(); t_actions.join()
-            print('Replay fertig.')
-        """))
-
-        inline = tmpl.substitute(
-            CLIENT_DIR=repr(self.makro_client_dir.as_posix()),
-            MOUSE_LOG=repr(moves.as_posix()),
-            ACTIONS_LOG=repr(actions.as_posix()),
+        # Minimaler Inline-Code: importiere SEIN macro_replay und starte replay_all()
+        inline = (
+            "import sys\n"
+            f"sys.path.insert(0, r'{self.client_dir.as_posix()}')\n"
+            "from macro_replay import MacroReplayManager\n"
+            f"m = MacroReplayManager(mouse_log=r'{moves.as_posix()}', actions_log=r'{fixed_actions.as_posix()}')\n"
+            "m.replay_all()\n"
         )
 
         creation_flags = 0
@@ -200,15 +93,18 @@ class ReplayService:
             creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
 
         try:
+            # cwd = Makro-Ordner -> relative 'screenshots/...'-Pfade stimmen
             self._proc = subprocess.Popen(
                 [sys.executable, "-c", inline],
-                cwd=str(self.makro_client_dir),
+                cwd=str(macro_dir),
                 creationflags=creation_flags,
             )
             self._running_id = macro_id
             if self.on_started:
-                try: self.on_started(macro_id)
-                except Exception: pass
+                try:
+                    self.on_started(macro_id)
+                except Exception:
+                    pass
         except Exception as e:
             self._proc = None
             self._running_id = None
@@ -220,26 +116,32 @@ class ReplayService:
         code = self._proc.poll()
         if code is None:
             return None
+
         err: Optional[str] = None
         if code != 0:
             err = f"Replay-Prozess endete mit Code {code}."
+
         rid = self._running_id or ""
         self._proc = None
         self._running_id = None
         if self.on_finished:
-            try: self.on_finished(rid, err)
-            except Exception: pass
+            try:
+                self.on_finished(rid, err)
+            except Exception:
+                pass
         return err
 
     def stop_replay(self) -> None:
         if not self.is_running():
             return
+
         proc = self._proc
         self._proc = None
         rid = self._running_id or ""
         self._running_id = None
         if proc is None:
             return
+
         try:
             if sys.platform.startswith("win"):
                 try:
@@ -248,8 +150,11 @@ class ReplayService:
                 except Exception:
                     pass
                 try:
-                    subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"],
-                                   capture_output=True, text=True)
+                    subprocess.run(
+                        ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                        capture_output=True,
+                        text=True,
+                    )
                 except Exception:
                     pass
             else:
@@ -260,5 +165,140 @@ class ReplayService:
                     proc.kill()
         finally:
             if self.on_finished:
-                try: self.on_finished(rid, None)
-                except Exception: pass
+                try:
+                    self.on_finished(rid, None)
+                except Exception:
+                    pass
+
+    # ---------------- helpers ----------------
+
+    def _find_client_dir(self) -> Path:
+        """
+        Sucht 'Makro-Client' neben Desktop/Dashboard/Python.
+        Wenn du einen fixen Pfad hast, gib ihn beim Konstruktor rein.
+        """
+        here = Path(__file__).resolve()
+        desktop_dir = here.parents[3]       # .../Desktop
+        dashboard_dir = here.parents[2]     # .../Desktop/Dashboard
+        python_dir = desktop_dir.parent     # .../Python
+
+        candidates = [
+            desktop_dir / "Makro-Client",
+            python_dir / "Makro-Client",            # dein üblicher Pfad
+            dashboard_dir.parent / "Makro-Client",
+        ]
+        for c in candidates:
+            if c.exists():
+                return c
+
+        tried = " | ".join(str(c) for c in candidates)
+        raise ReplayError(f"Makro-Client nicht gefunden. Versuchte Pfade: {tried}")
+
+    # -------- actions.log -> actions.fixed.log mit Pfad-Resolver --------
+
+    def _prepare_actions_file(self, macro_dir: Path, actions_path: Path) -> Path:
+        """
+        Liest actions.log (JSON lines) und normalisiert 'screenshot'-Pfade:
+        - Existiert der Pfad? -> lassen.
+        - Sonst im <macro_dir>/screenshots/ bestmögliches Icon suchen:
+            1) exakter Name
+            2) gleicher (x,y), nächstliegender ts
+            3) beliebiger nächstliegender ts
+            4) fallback: screenshot_.png (falls vorhanden)
+        - Schreibt nach actions.fixed.log und gibt diesen Pfad zurück.
+        """
+        fixed_path = macro_dir / "actions.fixed.log"
+        screenshots_dir = macro_dir / "screenshots"
+
+        # Index der vorhandenen Screenshots bauen
+        all_pngs = sorted(screenshots_dir.glob("*.png"))
+        by_xy: Dict[Tuple[int, int], List[Tuple[int, Path]]] = {}
+        by_ts: List[Tuple[int, Path]] = []
+        fallback_blank = screenshots_dir / "screenshot_.png"
+
+        for p in all_pngs:
+            meta = _parse_name(p.name)
+            if not meta:
+                if p.name.lower() == "screenshot_.png":
+                    continue  # fallback separat
+                continue
+            ts, x, y = meta
+            by_ts.append((ts, p))
+            by_xy.setdefault((x, y), []).append((ts, p))
+
+        by_ts.sort()
+        for lst in by_xy.values():
+            lst.sort()
+
+        def nearest_by_ts(target_ts: int, candidates: List[Tuple[int, Path]]) -> Optional[Path]:
+            if not candidates:
+                return None
+            # binäre Suche wäre möglich, hier lineare da Umfang klein
+            best = None
+            best_d = 1 << 62
+            for ts, p in candidates:
+                d = abs(ts - target_ts)
+                if d < best_d:
+                    best_d = d
+                    best = p
+            return best
+
+        def resolve_icon(requested_path: str) -> str:
+            # Existiert der exakte Pfad?
+            abs_req = Path(requested_path)
+            if abs_req.exists():
+                return str(abs_req)
+
+            # Gleichnamige Datei im screenshots-Ordner?
+            candidate = screenshots_dir / abs_req.name
+            if candidate.exists():
+                return str(candidate)
+
+            # Metadaten aus gewünschtem Namen ziehen
+            meta = _parse_name(abs_req.name)
+            if meta:
+                ts, x, y = meta
+                # 1) gleicher (x,y) -> nächstliegender ts
+                lst = by_xy.get((x, y), [])
+                p = nearest_by_ts(ts, lst)
+                if p:
+                    return str(p)
+                # 2) global nächstliegender ts
+                p = nearest_by_ts(ts, by_ts)
+                if p:
+                    return str(p)
+
+            # 3) Fallback: screenshot_.png
+            if fallback_blank.exists():
+                return str(fallback_blank)
+
+            # Letzte Rettung: irgendeine vorhandene Datei
+            if all_pngs:
+                return str(all_pngs[0])
+
+            # Nichts gefunden -> unverändert lassen (führt später zu klarer Fehlermeldung)
+            return requested_path
+
+        lines_out: List[str] = []
+        with actions_path.open("r", encoding="utf-8") as f:
+            for raw in f:
+                raw = raw.strip()
+                if not raw:
+                    continue
+                try:
+                    evt: Dict[str, Any] = json.loads(raw)
+                except Exception:
+                    lines_out.append(raw + "\n")
+                    continue
+
+                if evt.get("type") in ("press", "release"):
+                    shot = evt.get("screenshot", "")
+                    if isinstance(shot, str) and shot:
+                        evt["screenshot"] = resolve_icon(shot)
+
+                lines_out.append(json.dumps(evt, ensure_ascii=False) + "\n")
+
+        with fixed_path.open("w", encoding="utf-8") as w:
+            w.writelines(lines_out)
+
+        return fixed_path
