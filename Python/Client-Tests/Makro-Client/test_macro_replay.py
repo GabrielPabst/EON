@@ -5,7 +5,7 @@ from macro_replay import MacroReplayManager
 
 def main():
     # Optionally specify custom log file paths here
-    manager = MacroReplayManager("mouse_moves.log","actions.log1")
+    manager = MacroReplayManager("mouse_moves.log","actions.log")
     manager.replay_all()
 
 if __name__ == "__main__":

@@ -1,9 +1,17 @@
-{"type": "press", "key": "mouse_Button.left", "x": 65, "y": 23, "time": 1753098358.6290236, "screenshot": "screenshots\\screenshot_1753098358629_65_23.png"}
-{"type": "release", "key": "mouse_Button.left", "x": 257, "y": 13, "time": 1753098361.7343316, "screenshot": null}
-{"type": "press", "key": "mouse_Button.left", "x": 69, "y": 24, "time": 1753098365.6867013, "screenshot": "screenshots\\screenshot_1753098365686_69_24.png"}
-{"type": "release", "key": "mouse_Button.left", "x": 70, "y": 24, "time": 1753098365.7841065, "screenshot": null}
-{"type": "press", "key": "mouse_Button.left", "x": 67, "y": 22, "time": 1753098366.4828367, "screenshot": "screenshots\\screenshot_1753098366482_67_22.png"}
-{"type": "release", "key": "mouse_Button.left", "x": 57, "y": 21, "time": 1753098369.0538418, "screenshot": null}
-{"type": "press", "key": "mouse_Button.left", "x": 54, "y": 16, "time": 1753098370.5088372, "screenshot": "screenshots\\screenshot_1753098370508_54_16.png"}
-{"type": "release", "key": "mouse_Button.left", "x": 54, "y": 16, "time": 1753098370.5608988, "screenshot": null}
-{"type": "press", "key": "'q'", "x": null, "y": null, "time": 1753098372.3127646, "screenshot": null}
+{"type": "press", "key": "mouse_Button.left", "x": 67, "y": 35, "time": 1756214469.0004168, "screenshot": "screenshots\\screenshot_1756214469000_67_35.png"}
+{"type": "release", "key": "mouse_Button.left", "x": 80, "y": 47, "time": 1756214470.1997862, "screenshot": null}
+{"type": "press", "key": "t", "x": null, "y": null, "time": 1756214471.353013, "screenshot": null}
+{"type": "press", "key": "e", "x": null, "y": null, "time": 1756214471.3973937, "screenshot": null}
+{"type": "release", "key": "t", "x": null, "y": null, "time": 1756214471.4510884, "screenshot": null}
+{"type": "release", "key": "e", "x": null, "y": null, "time": 1756214471.5219648, "screenshot": null}
+{"type": "press", "key": "s", "x": null, "y": null, "time": 1756214471.6204734, "screenshot": null}
+{"type": "press", "key": "t", "x": null, "y": null, "time": 1756214471.6943135, "screenshot": null}
+{"type": "release", "key": "s", "x": null, "y": null, "time": 1756214471.809157, "screenshot": null}
+{"type": "release", "key": "t", "x": null, "y": null, "time": 1756214471.8151538, "screenshot": null}
+{"type": "press", "key": "Key.ctrl_l", "x": null, "y": null, "time": 1756214472.7659223, "screenshot": null}
+{"type": "press", "key": "s", "x": null, "y": null, "time": 1756214472.9078138, "screenshot": null}
+{"type": "release", "key": "s", "x": null, "y": null, "time": 1756214473.0248973, "screenshot": null}
+{"type": "release", "key": "Key.ctrl_l", "x": null, "y": null, "time": 1756214473.0900075, "screenshot": null}
+{"type": "press", "key": "Key.enter", "x": null, "y": null, "time": 1756214474.0968564, "screenshot": null}
+{"type": "release", "key": "Key.enter", "x": null, "y": null, "time": 1756214474.2561822, "screenshot": null}
+

@@ -18,6 +18,42 @@ class ActionRecorder:
         open(self.ACTIONS_LOG, "w").close()
         open(self.MOUSE_LOG, "w").close()
 
+    def normalize_key(self, key):
+        """Normalize key to get raw key without modifiers"""
+        try:
+            # Handle special keys (Ctrl, Alt, Shift, etc.)
+            if hasattr(key, 'name'):
+                return "Key." + key.name.lower()
+            
+            # Handle character keys
+            if hasattr(key, 'char') and key.char is not None:
+                char = key.char
+                
+                # Handle control characters (Ctrl+A = \u0001, Ctrl+B = \u0002, etc.)
+                if len(char) == 1 and ord(char) <= 31:
+                    # Convert control character back to the base letter
+                    if ord(char) >= 1 and ord(char) <= 26:
+                        return chr(ord(char) + ord('a') - 1)  # \u0001 -> 'a', \u0002 -> 'b', etc.
+                    else:
+                        # Other control characters, just return as is
+                        return char
+                
+                # Regular character - return lowercase
+                return char.lower()
+            
+            # Fallback to string representation for any other cases
+            key_str = str(key)
+            
+            # Remove quotes and prefixes that pynput adds
+            if key_str.startswith("'") and key_str.endswith("'"):
+                key_str = key_str[1:-1]
+                
+            return key_str.lower()
+            
+        except Exception:
+            # Fallback for any unexpected key format
+            return str(key).replace("'", "").lower()
+
     def on_click(self, x, y, button, pressed):
         button_str = str(button)
         now = self._current_time()
@@ -48,7 +84,7 @@ class ActionRecorder:
             self._log_action(action)
 
     def on_press(self, key):
-        key_str = str(key)
+        key_str = self.normalize_key(key)
         now = self._current_time()
         if key_str not in self.key_press_times:
             self.key_press_times[key_str] = now
@@ -63,11 +99,11 @@ class ActionRecorder:
             self.actions.append(action)
             self._log_action(action)
         # Stop recording on 'q'
-        if key == keyboard.KeyCode.from_char('q'):
+        if key_str == 'q':
             return False
 
     def on_release(self, key):
-        key_str = str(key)
+        key_str = self.normalize_key(key)
         now = self._current_time()
         if key_str in self.key_press_times:
             del self.key_press_times[key_str]
