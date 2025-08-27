@@ -24,11 +24,11 @@ class ActionRecorder:
             # Handle special keys (Ctrl, Alt, Shift, etc.)
             if hasattr(key, 'name'):
                 return "Key." + key.name.lower()
-            
+        
             # Handle character keys
             if hasattr(key, 'char') and key.char is not None:
                 char = key.char
-                
+            
                 # Handle control characters (Ctrl+A = \u0001, Ctrl+B = \u0002, etc.)
                 if len(char) == 1 and ord(char) <= 31:
                     # Convert control character back to the base letter
@@ -37,19 +37,52 @@ class ActionRecorder:
                     else:
                         # Other control characters, just return as is
                         return char
-                
-                # Regular character - return lowercase
-                return char.lower()
             
+                # Regular character - return lowercase (this handles Unicode chars like äöü properly)
+                return char.lower()
+        
             # Fallback to string representation for any other cases
             key_str = str(key)
-            
+        
             # Remove quotes and prefixes that pynput adds
             if key_str.startswith("'") and key_str.endswith("'"):
                 key_str = key_str[1:-1]
-                
-            return key_str.lower()
             
+            # Handle numpad keys with Num Lock on (they come as <97>, <98>, etc.)
+            if key_str.startswith('<') and key_str.endswith('>'):
+                ascii_code = key_str[1:-1]
+                try:
+                    code = int(ascii_code)
+                    # Map numpad ASCII codes to their intended numpad values
+                    numpad_mapping = {
+                        97: '1',   # numpad 1
+                        98: '2',   # numpad 2  
+                        99: '3',   # numpad 3
+                        100: '4',  # numpad 4
+                        101: '5',  # numpad 5
+                        102: '6',  # numpad 6
+                        103: '7',  # numpad 7
+                        104: '8',  # numpad 8
+                        105: '9',  # numpad 9
+                        96: '0',   # numpad 0
+                        110: '.',  # numpad decimal point
+                        111: '/',  # numpad divide
+                        106: '*',  # numpad multiply
+                        109: '-',  # numpad subtract
+                        107: '+',  # numpad add
+                        13: 'Key.enter'  # numpad enter
+                    }
+                    
+                    if code in numpad_mapping:
+                        return numpad_mapping[code]
+                    else:
+                        # For other codes, convert to character if printable
+                        return chr(code) if 32 <= code <= 126 else key_str
+                except ValueError:
+                    pass
+        
+            return key_str.lower()
+        
         except Exception:
             # Fallback for any unexpected key format
             return str(key).replace("'", "").lower()
@@ -126,8 +159,8 @@ class ActionRecorder:
             'y': y,
             'time': now
         }
-        with open(self.MOUSE_LOG, "a") as f:
-            f.write(json.dumps(action) + "\n")
+        with open(self.MOUSE_LOG, "a", encoding='utf-8') as f:
+            f.write(json.dumps(action, ensure_ascii=False) + "\n")
 
     def on_scroll(self, x, y, dx, dy):
         now = self._current_time()
@@ -139,8 +172,8 @@ class ActionRecorder:
             'dy': dy,
             'time': now
         }
-        with open(self.MOUSE_LOG, "a") as f:
-            f.write(json.dumps(action) + "\n")
+        with open(self.MOUSE_LOG, "a", encoding='utf-8') as f:
+            f.write(json.dumps(action, ensure_ascii=False) + "\n")
 
     def _take_screenshot(self, x, y):
         left = max(0, x - self.screenshot_radius)
@@ -156,8 +189,8 @@ class ActionRecorder:
     def _log_action(self, action):
         if 'duration' in action and (action['duration'] is None or action['duration'] == 0.0):
             return
-        with open(self.ACTIONS_LOG, "a") as f:
-            f.write(json.dumps(action) + "\n")
+        with open(self.ACTIONS_LOG, "a", encoding='utf-8') as f:
+            f.write(json.dumps(action, ensure_ascii=False) + "\n")
 
     @staticmethod
     def _current_time():
