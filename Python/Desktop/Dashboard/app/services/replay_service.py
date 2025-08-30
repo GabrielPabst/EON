@@ -199,7 +199,7 @@ class ReplayService:
     def _prepare_actions_file(self, macro_dir: Path, actions_path: Path) -> Path:
         """
         Liest actions.log (JSON lines) und normalisiert 'screenshot'-Pfade:
-        - Existiert der Pfad? -> lassen.
+        - Existiert der Pfad? -> wenn er im lokalen screenshots/-Ordner liegt, relativ schreiben.
         - Sonst im <macro_dir>/screenshots/ bestmögliches Icon suchen:
             1) exakter Name
             2) gleicher (x,y), nächstliegender ts
@@ -233,7 +233,6 @@ class ReplayService:
         def nearest_by_ts(target_ts: int, candidates: List[Tuple[int, Path]]) -> Optional[Path]:
             if not candidates:
                 return None
-            # binäre Suche wäre möglich, hier lineare da Umfang klein
             best = None
             best_d = 1 << 62
             for ts, p in candidates:
@@ -243,41 +242,52 @@ class ReplayService:
                     best = p
             return best
 
-        def resolve_icon(requested_path: str) -> str:
-            # Existiert der exakte Pfad?
-            abs_req = Path(requested_path)
-            if abs_req.exists():
-                return str(abs_req)
+        def rel_in_screenshots(p: Path) -> str:
+            # garantiert Forward Slashes + relativer Pfad
+            return f"screenshots/{p.name}"
 
-            # Gleichnamige Datei im screenshots-Ordner?
+        def resolve_icon(requested_path: str) -> str:
+            abs_req = Path(requested_path)
+
+            # 0) Falls der exakte Pfad existiert:
+            if abs_req.exists():
+                # Wenn er im lokalen screenshots/-Ordner liegt -> relativ zurückgeben
+                try:
+                    abs_req.relative_to(screenshots_dir)
+                    return rel_in_screenshots(abs_req)
+                except Exception:
+                    # Liegt außerhalb -> notfalls posix-abs Pfad beibehalten
+                    return abs_req.as_posix()
+
+            # 1) Gleichnamige Datei im lokalen screenshots/-Ordner?
             candidate = screenshots_dir / abs_req.name
             if candidate.exists():
-                return str(candidate)
+                return rel_in_screenshots(candidate)
 
-            # Metadaten aus gewünschtem Namen ziehen
+            # 2) Metadaten aus gewünschtem Namen ziehen und bestes Match im lokalen Ordner finden
             meta = _parse_name(abs_req.name)
             if meta:
                 ts, x, y = meta
-                # 1) gleicher (x,y) -> nächstliegender ts
+                # 2a) gleicher (x,y) -> nächstliegender ts
                 lst = by_xy.get((x, y), [])
                 p = nearest_by_ts(ts, lst)
                 if p:
-                    return str(p)
-                # 2) global nächstliegender ts
+                    return rel_in_screenshots(p)
+                # 2b) global nächstliegender ts
                 p = nearest_by_ts(ts, by_ts)
                 if p:
-                    return str(p)
+                    return rel_in_screenshots(p)
 
             # 3) Fallback: screenshot_.png
             if fallback_blank.exists():
-                return str(fallback_blank)
+                return rel_in_screenshots(fallback_blank)
 
-            # Letzte Rettung: irgendeine vorhandene Datei
+            # 4) Letzte Rettung: irgendeine vorhandene Datei (im lokalen Ordner -> relativ)
             if all_pngs:
-                return str(all_pngs[0])
+                return rel_in_screenshots(all_pngs[0])
 
-            # Nichts gefunden -> unverändert lassen (führt später zu klarer Fehlermeldung)
-            return requested_path
+            # 5) Gar nichts gefunden -> Originalpfad posix-normalisiert zurückgeben
+            return abs_req.as_posix()
 
         lines_out: List[str] = []
         with actions_path.open("r", encoding="utf-8") as f:

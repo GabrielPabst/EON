@@ -1,89 +1,54 @@
+# app/services/hotkey_service.py
 from __future__ import annotations
-from typing import Callable, Dict, Optional, Set, Tuple
-import threading
+from typing import Callable, Dict, Optional
 
-from pynput import keyboard
-from pynput.keyboard import Key, KeyCode
+# Backend A: 'keyboard' (bevorzugt auf Windows, global und oft am zuverlässigsten)
+try:
+    import keyboard as kb  # type: ignore
+    KB_AVAILABLE = True
+except Exception:
+    KB_AVAILABLE = False
+
+# Backend B: 'pynput' (Fallback, wenn 'keyboard' nicht verfügbar ist)
+if not KB_AVAILABLE:
+    from pynput import keyboard  # type: ignore
 
 
-CanonicalCombo = Tuple[str, ...]  # z.B. ("<ctrl>", "<alt>", "p")
-
-
-def _canon_key(k) -> Optional[str]:
+def _expand_user_spec(spec: Optional[str]) -> Optional[str]:
     """
-    Normalisiert pynput-Key/KeyCode zu Strings:
-      - linke/rechte Modifier -> "<ctrl>", "<alt>", "<shift>", "<cmd>"
-      - Buchstaben/Ziffern -> "a", "1"
-      - F-Tasten -> "f1".."f24"
-      - Sondertasten -> "enter", "tab", "esc", ...
-    """
-    # KeyCode (buchstabe/zeichen)
-    if isinstance(k, KeyCode):
-        if k.char:
-            return k.char.lower()
-        return None
-
-    # Key.* (inkl. ctrl_l/ctrl_r)
-    if isinstance(k, Key):
-        name = str(k).split('.')[-1]  # z.B. 'ctrl_l', 'enter'
-        # Modifiers vereinheitlichen
-        if name in ("ctrl", "ctrl_l", "ctrl_r"):
-            return "<ctrl>"
-        if name in ("alt", "alt_l", "alt_r"):
-            return "<alt>"
-        if name in ("shift", "shift_l", "shift_r"):
-            return "<shift>"
-        if name in ("cmd", "cmd_l", "cmd_r", "win"):
-            return "<cmd>"
-        # F-Tasten
-        if name.startswith("f") and name[1:].isdigit():
-            return name
-        return name
-    return None
-
-
-def _parse_combo(spec: Optional[str]) -> Optional[CanonicalCombo]:
-    """
-    Parse "<ctrl>+<alt>+p" | "f8" | "<win>+f2" | "enter" etc. -> kanonische Tuple.
-    Leer/None -> None.
+    Aus einer Kurzangabe (z.B. 'k') wird unsere Standard-Kombi:
+    '<ctrl>+<shift>+<alt>+k'.
+    Vollständige Spezifikationen bleiben unverändert.
     """
     if not spec:
         return None
     s = spec.strip().lower()
-    if not s:
-        return None
+    if len(s) == 1 and s.isalnum():
+        return f"<ctrl>+<shift>+<alt>+{s}"
+    return s
 
-    parts = [p.strip() for p in s.replace(" ", "").split("+") if p.strip()]
-    mapped: list[str] = []
-    for p in parts:
-        if p in ("<ctrl>", "<control>", "<ctl>"):
-            mapped.append("<ctrl>")
-        elif p in ("<alt>",):
-            mapped.append("<alt>")
-        elif p in ("<shift>",):
-            mapped.append("<shift>")
-        elif p in ("<cmd>", "<win>", "<meta>"):
-            mapped.append("<cmd>")
-        elif p.startswith("f") and p[1:].isdigit():
-            mapped.append(p)  # f1..f24
-        else:
-            # Key.enter -> enter ; sonst einzelnes zeichen
-            if p.startswith("key."):
-                mapped.append(p.split(".", 1)[1])
-            else:
-                mapped.append(p)
-    # doppelte entfernen & sortieren (reihenfolge-unabhängig)
-    dedup = sorted(set(mapped))
-    return tuple(dedup) if dedup else None
+
+def _canon_for_keyboard_module(expanded: str) -> str:
+    """
+    'keyboard' erwartet 'ctrl+shift+alt+k' (ohne spitze Klammern).
+    """
+    return (
+        expanded.replace("<ctrl>", "ctrl")
+        .replace("<shift>", "shift")
+        .replace("<alt>", "alt")
+        .replace("<cmd>", "windows")
+        .replace(" ", "")
+    )
 
 
 class HotkeyService:
     """
-    Globaler Hotkey-Listener mit frei definierbaren Kombis pro Makro.
-    - set_macro_hotkey(macro_id, "<ctrl>+<alt>+p")
-    - set_stop_hotkey("<ctrl>+<alt>+s")
+    Nutzungs-API:
+      set_macro_hotkey(macro_id, 'k')  -> registriert Ctrl+Shift+Alt+K
+      set_stop_hotkey('<ctrl>+<shift>+<alt>+s')
+
     Callbacks:
-      on_start_request(macro_id)
+      on_start_request(macro_id: str)
       on_stop_request()
     """
 
@@ -91,89 +56,169 @@ class HotkeyService:
         self.on_start_request: Optional[Callable[[str], None]] = None
         self.on_stop_request: Optional[Callable[[], None]] = None
 
-        self._macro_hotkeys: Dict[str, Optional[CanonicalCombo]] = {}  # id -> combo
-        self._stop_combo: Optional[CanonicalCombo] = None
+        self.backend: str = "keyboard" if KB_AVAILABLE else "pynput"
 
-        self._pressed: Set[str] = set()
-        self._fired: Set[CanonicalCombo] = set()
+        # Gemeinsame Daten
+        self._macro_specs: Dict[str, Optional[str]] = {}   # user value: Buchstabe oder None
+        self._stop_spec: Optional[str] = None
 
-        self._listener: Optional[keyboard.Listener] = None
-        self._lock = threading.RLock()
-        self._thread: Optional[threading.Thread] = None
-        self._running = False
+        # keyboard-Backend Handles
+        self._kb_handles: Dict[str, Optional[int]] = {}
+        self._kb_stop_handle: Optional[int] = None
 
-    # ---------- public API ----------
+        # pynput-Backend
+        self._pn_listener = None  # type: ignore
+
+        print(f"[HK] HotkeyService init – Backend: {self.backend} "
+              f"(keyboard available: {KB_AVAILABLE})")
+
+    # ---------------- Lifecycle ----------------
     def start(self) -> None:
-        if self._running:
+        print(f"[HK] start() – Backend {self.backend}")
+        if self.backend == "keyboard":
+            # keyboard startet "on demand", kein Listener, nichts zu tun
             return
-        self._running = True
-
-        def run():
-            with keyboard.Listener(on_press=self._on_press, on_release=self._on_release) as li:
-                self._listener = li
-                li.join()
-
-        self._thread = threading.Thread(target=run, name="HotkeyListener", daemon=True)
-        self._thread.start()
+        self._rebuild_pynput()
 
     def stop(self) -> None:
-        self._running = False
-        if self._listener:
-            self._listener.stop()
-            self._listener = None
-        self._thread = None
+        print(f"[HK] stop() – Backend {self.backend}")
+        if self.backend == "keyboard":
+            try:
+                for macro_id, h in list(self._kb_handles.items()):
+                    if h is not None:
+                        kb.remove_hotkey(h)  # type: ignore
+                        print(f"[HK] (keyboard) removed hotkey for {macro_id}")
+            except Exception as ex:
+                print(f"[HK] (keyboard) remove_hotkey error: {ex}")
+            self._kb_handles.clear()
+            if self._kb_stop_handle is not None:
+                try:
+                    kb.remove_hotkey(self._kb_stop_handle)  # type: ignore
+                    print("[HK] (keyboard) removed STOP hotkey")
+                except Exception as ex:
+                    print(f"[HK] (keyboard) remove STOP error: {ex}")
+            self._kb_stop_handle = None
+            return
 
-    def set_macro_hotkey(self, macro_id: str, combo: Optional[str]) -> None:
-        with self._lock:
-            self._macro_hotkeys[macro_id] = _parse_combo(combo)
+        # pynput
+        if self._pn_listener is not None:
+            try:
+                self._pn_listener.stop()
+                print("[HK] (pynput) listener stopped")
+            except Exception as ex:
+                print(f"[HK] (pynput) stop error: {ex}")
+            self._pn_listener = None
+
+    # ---------------- Public API ----------------
+    def set_macro_hotkey(self, macro_id: str, combo_spec: Optional[str]) -> None:
+        """combo_spec ist bei uns üblicherweise nur ein Buchstabe ('k')."""
+        print(f"[HK] set_macro_hotkey({macro_id!r}, {combo_spec!r})")
+        self._macro_specs[macro_id] = combo_spec
+
+        if self.backend == "keyboard":
+            # vorhandenen entfernen
+            old = self._kb_handles.get(macro_id)
+            if old is not None:
+                try:
+                    kb.remove_hotkey(old)  # type: ignore
+                    print(f"[HK] (keyboard) removed previous hotkey for {macro_id}")
+                except Exception as ex:
+                    print(f"[HK] (keyboard) remove previous error: {ex}")
+                self._kb_handles[macro_id] = None
+
+            # neuen registrieren
+            if combo_spec:
+                expanded = _expand_user_spec(combo_spec) or ""
+                seq = _canon_for_keyboard_module(expanded)
+                try:
+                    handle = kb.add_hotkey(seq, lambda mid=macro_id: self._fire_start(mid))  # type: ignore
+                    self._kb_handles[macro_id] = handle
+                    print(f"[HK] (keyboard) registered {seq} -> start {macro_id}")
+                except Exception as ex:
+                    print(f"[HK] (keyboard) add_hotkey error for {seq}: {ex}")
+            else:
+                print(f"[HK] (keyboard) no hotkey set for {macro_id}")
+            return
+
+        # pynput: kompletten Listener neu aufbauen
+        self._rebuild_pynput()
 
     def set_stop_hotkey(self, combo: Optional[str]) -> None:
-        with self._lock:
-            self._stop_combo = _parse_combo(combo)
+        print(f"[HK] set_stop_hotkey({combo!r})")
+        self._stop_spec = combo
 
-    # ---------- intern ----------
-    def _combo_matches(self, required: CanonicalCombo) -> bool:
-        # Treffer, wenn alle erforderlichen Tasten gedrückt sind (weitere dürfen zusätzlich gedrückt sein)
-        return set(required).issubset(self._pressed)
+        if self.backend == "keyboard":
+            if self._kb_stop_handle is not None:
+                try:
+                    kb.remove_hotkey(self._kb_stop_handle)  # type: ignore
+                    print("[HK] (keyboard) removed old STOP hotkey")
+                except Exception as ex:
+                    print(f"[HK] (keyboard) remove old STOP error: {ex}")
+                self._kb_stop_handle = None
 
-    def _on_press(self, key):
-        k = _canon_key(key)
-        if not k:
+            if combo:
+                seq = _canon_for_keyboard_module(combo)
+                try:
+                    self._kb_stop_handle = kb.add_hotkey(seq, self._fire_stop)  # type: ignore
+                    print(f"[HK] (keyboard) registered STOP: {seq}")
+                except Exception as ex:
+                    print(f"[HK] (keyboard) add STOP error for {seq}: {ex}")
+            else:
+                print("[HK] (keyboard) STOP hotkey disabled")
             return
-        with self._lock:
-            self._pressed.add(k)
 
-            # Stop zuerst prüfen
-            if self._stop_combo and self._combo_matches(self._stop_combo) and self._stop_combo not in self._fired:
-                self._fired.add(self._stop_combo)
-                if self.on_stop_request:
-                    try: self.on_stop_request()
-                    except Exception: pass
-                return
+        self._rebuild_pynput()
 
-            # Start-Hotkeys prüfen
-            for mid, combo in list(self._macro_hotkeys.items()):
-                if not combo:
-                    continue
-                if combo in self._fired:
-                    continue
-                if self._combo_matches(combo):
-                    self._fired.add(combo)
-                    if self.on_start_request:
-                        try: self.on_start_request(mid)
-                        except Exception: pass
+    # ---------------- Intern ----------------
+    def _fire_start(self, macro_id: str) -> None:
+        print(f"[HK] TRIGGER start -> {macro_id}")
+        if self.on_start_request:
+            try:
+                self.on_start_request(macro_id)
+            except Exception as ex:
+                print(f"[HK] on_start_request error: {ex}")
 
-    def _on_release(self, key):
-        k = _canon_key(key)
-        if not k:
+    def _fire_stop(self) -> None:
+        print("[HK] TRIGGER stop")
+        if self.on_stop_request:
+            try:
+                self.on_stop_request()
+            except Exception as ex:
+                print(f"[HK] on_stop_request error: {ex}")
+
+    # ----- pynput-spezifisch -----
+    def _rebuild_pynput(self) -> None:
+        if self.backend != "pynput":
             return
-        with self._lock:
-            # Taste loslassen
-            if k in self._pressed:
-                self._pressed.remove(k)
-            # Gefeuerten-Status zurücksetzen, sobald eine an der Kombi beteiligte Taste losgelassen wird
-            to_clear = set()
-            for combo in self._fired:
-                if k in combo:
-                    to_clear.add(combo)
-            self._fired.difference_update(to_clear)
+
+        # alten Listener beenden
+        if self._pn_listener is not None:
+            try:
+                self._pn_listener.stop()
+                print("[HK] (pynput) listener replaced")
+            except Exception as ex:
+                print(f"[HK] (pynput) stop (replace) error: {ex}")
+            self._pn_listener = None
+
+        mapping: Dict[str, Callable[[], None]] = {}
+        for mid, spec in self._macro_specs.items():
+            if not spec:
+                continue
+            expanded = _expand_user_spec(spec)
+            if not expanded:
+                continue
+            mapping[expanded] = (lambda m=mid: self._fire_start(m))
+        if self._stop_spec:
+            mapping[self._stop_spec] = self._fire_stop
+
+        if not mapping:
+            print("[HK] (pynput) nothing to register")
+            return
+
+        try:
+            self._pn_listener = keyboard.GlobalHotKeys(mapping)  # type: ignore
+            self._pn_listener.start()
+            print(f"[HK] (pynput) registered hotkeys: {list(mapping.keys())}")
+        except Exception as ex:
+            self._pn_listener = None
+            print(f"[HK] (pynput) GlobalHotKeys error: {ex}")
