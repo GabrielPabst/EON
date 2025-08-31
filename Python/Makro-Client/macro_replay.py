@@ -9,6 +9,8 @@ from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 from image_finder_client import ImageFinderClient
 import cv2
+from config import ACTIONS_LOG, MOUSE_LOG, CONFIDENCE_THRESHOLD, MAX_ATTEMPTS, RETRY_DELAY, SEARCH_REGION_SIZE
+
 
 ACTIONS_LOG = "actions.log"
 MOUSE_LOG = "mouse_moves.log"
@@ -186,10 +188,10 @@ class KeyboardReplay:
                         set_mouse_event_offset((0, 0))
 
 class MouseScreenshotFinder:
-    CONFIDENCE_THRESHOLD = 0.8
-    MAX_ATTEMPTS = 3
-    RETRY_DELAY = 2.0  # seconds
-    SEARCH_REGION_SIZE = 100  # pixels (width/height of region around click)
+    CONFIDENCE_THRESHOLD = CONFIDENCE_THRESHOLD
+    MAX_ATTEMPTS = MAX_ATTEMPTS
+    RETRY_DELAY = RETRY_DELAY # seconds
+    SEARCH_REGION_SIZE = SEARCH_REGION_SIZE  # pixels (width/height of region around click)
 
     def __init__(self, finder: Optional[ImageFinderClient] = None):
         self.finder = finder if finder is not None else ImageFinderClient()

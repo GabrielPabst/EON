@@ -1,0 +1,26 @@
+import cv2
+ACTIONS_LOG = "actions.log"
+MOUSE_LOG = "mouse_moves.log"
+
+#MouseScreenshotFinder
+CONFIDENCE_THRESHOLD = 0.8
+MAX_ATTEMPTS = 3
+RETRY_DELAY = 2.0  # seconds
+SEARCH_REGION_SIZE = 100  # pixels (width/height of region around click)
+
+#ImageFinderClient
+METHOD_TEMPLATE = "TEMPLATE"
+DEFAULT_METHOD = METHOD_TEMPLATE
+
+DEFAULT_THRESHOLD = 0.6
+SCALE_FACTORS = [0.95, 0.975, 1.0, 1.025, 1.05]
+MATCHING_METHODS = [
+    (cv2.TM_CCOEFF_NORMED, 1.0),
+    (cv2.TM_CCORR_NORMED, 0.9),
+]
+MATCH_COLOR = (0, 255, 0)
+FONT_SCALE = 0.7
+FONT_THICKNESS = 2
+TEXT_COLOR = (0, 255, 0)
+RECT_THICKNESS = 2
+MIN_TEMPLATE_SIZE = 10

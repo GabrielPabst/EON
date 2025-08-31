@@ -3,10 +3,9 @@ import time
 import json
 import pyautogui
 from pynput import mouse, keyboard
+from config import ACTIONS_LOG, MOUSE_LOG, STOP_KEY
 
 class ActionRecorder:
-    ACTIONS_LOG = "actions.log"
-    MOUSE_LOG = "mouse_moves.log"
 
     def __init__(self, screenshot_radius=20, screenshot_dir="screenshots"):
         self.actions = []
@@ -15,8 +14,8 @@ class ActionRecorder:
         self.key_press_times = {}
         self.mouse_press_times = {}
         os.makedirs(self.screenshot_dir, exist_ok=True)
-        open(self.ACTIONS_LOG, "w").close()
-        open(self.MOUSE_LOG, "w").close()
+        open(ACTIONS_LOG, "w").close()
+        open(MOUSE_LOG, "w").close()
 
     def normalize_key(self, key):
         """Normalize key to get raw key without modifiers"""
@@ -132,7 +131,7 @@ class ActionRecorder:
             self.actions.append(action)
             self._log_action(action)
         # Stop recording on 'q'
-        if key_str == 'q':
+        if key_str == STOP_KEY:
             return False
 
     def on_release(self, key):
@@ -159,7 +158,7 @@ class ActionRecorder:
             'y': y,
             'time': now
         }
-        with open(self.MOUSE_LOG, "a", encoding='utf-8') as f:
+        with open(MOUSE_LOG, "a", encoding='utf-8') as f:
             f.write(json.dumps(action, ensure_ascii=False) + "\n")
 
     def on_scroll(self, x, y, dx, dy):
@@ -172,7 +171,7 @@ class ActionRecorder:
             'dy': dy,
             'time': now
         }
-        with open(self.MOUSE_LOG, "a", encoding='utf-8') as f:
+        with open(MOUSE_LOG, "a", encoding='utf-8') as f:
             f.write(json.dumps(action, ensure_ascii=False) + "\n")
 
     def _take_screenshot(self, x, y):
@@ -189,7 +188,7 @@ class ActionRecorder:
     def _log_action(self, action):
         if 'duration' in action and (action['duration'] is None or action['duration'] == 0.0):
             return
-        with open(self.ACTIONS_LOG, "a", encoding='utf-8') as f:
+        with open(ACTIONS_LOG, "a", encoding='utf-8') as f:
             f.write(json.dumps(action, ensure_ascii=False) + "\n")
 
     @staticmethod
@@ -201,7 +200,7 @@ class RecorderClient:
         self.recorder = ActionRecorder()
 
     def run(self):
-        print("Recording started. Press 'q' to stop.")
+        print("Recording started. Press "+STOP_KEY+" to stop.")
         with keyboard.Listener(
             on_press=self.recorder.on_press,
             on_release=self.recorder.on_release

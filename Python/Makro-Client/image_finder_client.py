@@ -2,24 +2,20 @@ import cv2
 import numpy as np
 import time
 from typing import Optional, Tuple, List
+from config import METHOD_TEMPLATE, DEFAULT_METHOD, DEFAULT_THRESHOLD, SCALE_FACTORS, MATCHING_METHODS, MATCH_COLOR, FONT_SCALE, FONT_THICKNESS, TEXT_COLOR, RECT_THICKNESS, MIN_TEMPLATE_SIZE
 
 class ImageFinderConfig:
-    METHOD_TEMPLATE = "TEMPLATE"
-    METHOD_SIFT = "SIFT"
-    DEFAULT_METHOD = METHOD_TEMPLATE
-
-    DEFAULT_THRESHOLD = 0.6
-    SCALE_FACTORS = [0.95, 0.975, 1.0, 1.025, 1.05]
-    MATCHING_METHODS = [
-        (cv2.TM_CCOEFF_NORMED, 1.0),
-        (cv2.TM_CCORR_NORMED, 0.9),
-    ]
-    MATCH_COLOR = (0, 255, 0)
-    FONT_SCALE = 0.7
-    FONT_THICKNESS = 2
-    TEXT_COLOR = (0, 255, 0)
-    RECT_THICKNESS = 2
-    MIN_TEMPLATE_SIZE = 10
+    METHOD_TEMPLATE = METHOD_TEMPLATE
+    DEFAULT_METHOD = DEFAULT_METHOD
+    DEFAULT_THRESHOLD = DEFAULT_THRESHOLD
+    SCALE_FACTORS = SCALE_FACTORS
+    MATCHING_METHODS = MATCHING_METHODS
+    MATCH_COLOR = MATCH_COLOR
+    FONT_SCALE = FONT_SCALE
+    FONT_THICKNESS = FONT_THICKNESS
+    TEXT_COLOR = TEXT_COLOR
+    RECT_THICKNESS = RECT_THICKNESS
+    MIN_TEMPLATE_SIZE = MIN_TEMPLATE_SIZE
 
 class ImageFinderClient:
     def __init__(self, threshold: Optional[float] = None, method: Optional[str] = None):
@@ -29,8 +25,6 @@ class ImageFinderClient:
     def find(self, icon_path: str, screenshot_path: str, region: Optional[Tuple[int, int, int, int]] = None):
         if self.method == ImageFinderConfig.METHOD_TEMPLATE:
             return self._find_template(icon_path, screenshot_path, region)
-        elif self.method == ImageFinderConfig.METHOD_SIFT:
-            return self._find_sift(icon_path, screenshot_path, region)
         else:
             raise ValueError("Unknown finder method")
 
@@ -72,39 +66,6 @@ class ImageFinderClient:
         if best_confidence < self.threshold:
             return None
         return best_match
-
-    def _find_sift(self, icon_path: str, screenshot_path: str, region: Optional[Tuple[int, int, int, int]] = None):
-        sift = cv2.SIFT_create()
-        img1 = cv2.imread(icon_path, cv2.IMREAD_GRAYSCALE)
-        img2 = cv2.imread(screenshot_path, cv2.IMREAD_GRAYSCALE)
-        if img1 is None or img2 is None:
-            raise ValueError("Could not load one or both images")
-        if region is not None:
-            x, y, w, h = region
-            img2 = img2[y:y+h, x:x+w]
-        else:
-            x, y = 0, 0
-        kp1, des1 = sift.detectAndCompute(img1, None)
-        kp2, des2 = sift.detectAndCompute(img2, None)
-        if des1 is None or des2 is None:
-            return None
-        bf = cv2.BFMatcher()
-        matches = bf.knnMatch(des1, des2, k=2)
-        good = [m for m, n in matches if m.distance < 0.75 * n.distance]
-        if len(good) > 4:
-            src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
-            dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-            M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-            if M is not None:
-                h_img, w_img = img1.shape
-                pts = np.float32([[0, 0], [0, h_img - 1], [w_img - 1, h_img - 1], [w_img - 1, 0]]).reshape(-1, 1, 2)
-                dst = cv2.perspectiveTransform(pts, M)
-                x0, y0, w0, h0 = cv2.boundingRect(dst)
-                center_x = x0 + x + w0 // 2
-                center_y = y0 + y + h0 // 2
-                confidence = len(good) / len(matches)
-                return (center_x, center_y, w0, h0, confidence)
-        return None
 
     @staticmethod
     def draw_match(screenshot_path: str, match: Optional[Tuple[int, int, int, int, float]], output_path: Optional[str] = None):
