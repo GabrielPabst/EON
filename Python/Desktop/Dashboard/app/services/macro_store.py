@@ -1,3 +1,4 @@
+# app/services/macro_store.py
 from __future__ import annotations
 
 import os
@@ -10,16 +11,22 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-# ---------- AppData <-> Linux Pfad ----------
+# ---------- AppData / Kanonischer Pfad ----------
 APP_VENDOR = "EON"
 APP_NAME = "MacroHub"
+
+
+def _canonical(p: str | Path) -> Path:
+    """Expand %VARS%, mache absolut/normalisiert und löse Symlinks wo möglich."""
+    return Path(os.path.abspath(os.path.normpath(os.path.expandvars(str(p)))))
+
 
 def _user_data_dir() -> Path:
     appdata = os.getenv("APPDATA")
     if appdata:
-        base = Path(appdata) / APP_VENDOR / APP_NAME
+        base = _canonical(Path(appdata) / APP_VENDOR / APP_NAME)
     else:
-        base = Path.home() / ".local" / "share" / APP_VENDOR / APP_NAME
+        base = _canonical(Path.home() / ".local" / "share" / APP_VENDOR / APP_NAME)
     base.mkdir(parents=True, exist_ok=True)
     return base
 
@@ -42,15 +49,15 @@ class FileNames:
 class MacroStore:
     """
     Robuster Store:
-    - Root: <AppData>/EON/MacroHub/macros
-    - load_all(): merged Index + tatsächliche Ordner (meta.json dominiert)
-    - update_meta_fields(): aktualisiert meta.json **und** Index
+    - Root: <AppData>/EON/MacroHub/macros (kanonisiert)
+    - load_all(): meta.json vom Datenträger dominiert, Index ist nur Snapshot
+    - update_meta_fields(): aktualisiert meta.json **und** Index (inkl. Deep-Merge für extra)
     """
 
     def __init__(self, root: Optional[str | Path] = None) -> None:
         if root is None:
             root = _user_data_dir() / "macros"
-        self.root: Path = Path(root)
+        self.root: Path = _canonical(root)
         self.root.mkdir(parents=True, exist_ok=True)
 
         self._files = FileNames()
@@ -63,16 +70,20 @@ class MacroStore:
         try:
             if not self._index_path.exists():
                 return []
-            return json.loads(self._index_path.read_text(encoding="utf-8"))
+            txt = self._index_path.read_text(encoding="utf-8")
+            return json.loads(txt) if txt.strip() else []
         except Exception:
+            # Korrupt? → leer zurück
             return []
 
     def _write_index(self, rows: List[Dict[str, Any]]) -> None:
         try:
+            self._index_path.parent.mkdir(parents=True, exist_ok=True)
             self._index_path.write_text(
                 json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8"
             )
         except Exception:
+            # kein harter Fehler
             pass
 
     def _find_index_row(self, macro_id: str) -> Tuple[Optional[int], Optional[Dict[str, Any]]]:
@@ -84,24 +95,28 @@ class MacroStore:
 
     # ---------- Dir helpers ----------
     def dir_for(self, macro_id: str) -> str:
-        return str(self.root / macro_id)
+        return str(_canonical(self.root / macro_id))
 
     def _guess_dir_for(self, macro_id: str) -> Optional[Path]:
-        p = self.root / macro_id
+        p = _canonical(self.root / macro_id)
         if (p / self._files.META).exists():
             return p
-        # Fallback: ggf. alte Struktur durchsuchen
-        for d in self.root.iterdir():
-            if not d.is_dir():
-                continue
-            meta_path = d / self._files.META
-            try:
-                if meta_path.exists():
+        # Fallback: alte Struktur/verschobene Verzeichnisse durchsuchen
+        try:
+            for d in self.root.iterdir():
+                if not d.is_dir():
+                    continue
+                meta_path = d / self._files.META
+                if not meta_path.exists():
+                    continue
+                try:
                     j = json.loads(meta_path.read_text(encoding="utf-8"))
                     if j.get("id") == macro_id:
                         return d
-            except Exception:
-                pass
+                except Exception:
+                    pass
+        except Exception:
+            pass
         return None
 
     # ---------- Load & merge ----------
@@ -111,12 +126,33 @@ class MacroStore:
             return None
         try:
             j = json.loads(meta_path.read_text(encoding="utf-8"))
+
             # Defaults absichern
+            j.setdefault("id", d.name)
+            j.setdefault("name", d.name)
             j.setdefault("author", "")
             j.setdefault("category", "Utilities")
             j.setdefault("description", "")
             j.setdefault("extra", {})
             j.setdefault("hotkey", None)
+
+            # Counts/Files ergänzen, falls fehlen
+            files = j.get("files")
+            if not files or not isinstance(files, list):
+                files = []
+                for fn in (self._files.ACTIONS, self._files.MOVES, self._files.ACTIONS_FIXED):
+                    if (d / fn).exists():
+                        files.append(fn)
+                j["files"] = files
+
+            counts = j.get("counts")
+            if not counts or not isinstance(counts, dict):
+                counts = {
+                    self._files.ACTIONS: self._safe_count_lines(d / self._files.ACTIONS),
+                    self._files.MOVES: self._safe_count_lines(d / self._files.MOVES),
+                }
+                j["counts"] = counts
+
             return j
         except Exception:
             return None
@@ -139,18 +175,27 @@ class MacroStore:
             merged = dict(r)
             if disk:
                 merged.update(disk)  # Disk dominiert
+            # Minimum-Defaults
+            merged.setdefault("name", merged.get("id", "Unnamed"))
+            merged.setdefault("description", "")
+            merged.setdefault("author", "")
+            merged.setdefault("category", "Utilities")
+            merged.setdefault("hotkey", None)
             results.append(merged)
 
         # 2) Ordner, die nicht im Index sind
         seen = {r.get("id") for r in results}
-        for d in self.root.iterdir():
-            if not d.is_dir():
-                continue
-            disk = self._load_meta_from_dir(d)
-            if not disk:
-                continue
-            if disk.get("id") not in seen:
-                results.append(disk)
+        try:
+            for d in self.root.iterdir():
+                if not d.is_dir():
+                    continue
+                disk = self._load_meta_from_dir(d)
+                if not disk:
+                    continue
+                if disk.get("id") not in seen:
+                    results.append(disk)
+        except Exception:
+            pass
 
         # Neueste oben
         def _key(x):
@@ -160,25 +205,31 @@ class MacroStore:
     # ---------- Create / Import ----------
     def add_from_zip(self, zip_path: str) -> Dict[str, Any]:
         import tempfile, zipfile
-        if not zip_path or not Path(zip_path).is_file():
+        p = Path(zip_path)
+        if not zip_path or not p.is_file():
             raise FileNotFoundError("ZIP nicht gefunden.")
         with tempfile.TemporaryDirectory() as td:
-            with zipfile.ZipFile(zip_path, "r") as zf:
+            with zipfile.ZipFile(p, "r") as zf:
                 zf.extractall(td)
+            # Name vom ZIP-Root ableiten (Ordnername in TD)
+            # Wir geben add_from_folder(td) direkt, dort wird src_p.name verwendet.
             return self.add_from_folder(td)
 
     def add_from_folder(self, src: str) -> Dict[str, Any]:
-        src_p = Path(src)
+        src_p = _canonical(src)
         mid = str(uuid.uuid4())
-        dst = self.root / mid
+        dst = _canonical(self.root / mid)
         dst.mkdir(parents=True, exist_ok=True)
 
         # Logs kopieren (case-insensitive)
         def _resolve_case(p: Path, name: str) -> Optional[Path]:
             want = name.lower()
-            for f in p.iterdir():
-                if f.name.lower() == want:
-                    return f
+            try:
+                for f in p.iterdir():
+                    if f.name.lower() == want:
+                        return f
+            except Exception:
+                pass
             return None
 
         for log in (self._files.ACTIONS, self._files.MOVES):
@@ -200,9 +251,12 @@ class MacroStore:
             self._files.MOVES: self._safe_count_lines(dst / self._files.MOVES),
         }
 
+        # Name standardmäßig aus Quellordner
+        default_name = src_p.name or dst.name
+
         meta = {
             "id": mid,
-            "name": dst.name,  # wird danach i.d.R. via update_meta_fields überschrieben
+            "name": default_name,
             "author": "",
             "category": "Utilities",
             "created_at": _now_iso(),
@@ -245,8 +299,9 @@ class MacroStore:
     # ---------- PUBLIC: Meta/Hotkey ----------
     def update_meta_fields(self, macro_id: str, fields: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Aktualisiert meta.json **und** Index. Erlaubte Keys: name, author, category,
-        description, hotkey, extra.
+        Aktualisiert meta.json **und** Index.
+        Erlaubte Keys: name, author, category, description, hotkey, extra.
+        Bei 'extra' wird (falls dict) deep-gemerged statt überschrieben.
         """
         d = self._guess_dir_for(macro_id)
         if not d:
@@ -256,7 +311,25 @@ class MacroStore:
             raise FileNotFoundError("meta.json fehlt.")
 
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
-        meta.update({k: v for k, v in fields.items() if k in {"name", "author", "category", "description", "hotkey", "extra"}})
+
+        update: Dict[str, Any] = {}
+        for k in ("name", "author", "category", "description", "hotkey"):
+            if k in fields:
+                update[k] = fields[k]
+
+        # extra deep-merge
+        if "extra" in fields and isinstance(fields["extra"], dict):
+            base_extra = meta.get("extra", {})
+            if not isinstance(base_extra, dict):
+                base_extra = {}
+            merged_extra = dict(base_extra)
+            merged_extra.update(fields["extra"])
+            update["extra"] = merged_extra
+        elif "extra" in fields:
+            # falls kein dict → hart setzen
+            update["extra"] = fields["extra"]
+
+        meta.update(update)
         meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
         # Index anpassen (falls vorhanden)
@@ -272,13 +345,12 @@ class MacroStore:
                     "hotkey": meta.get("hotkey", r.get("hotkey")),
                     "description": meta.get("description", r.get("description", "")),
                 }
+                self._write_index(rows)
                 break
         else:
             # nicht im Index? -> hinzufügen
             self._add_to_index(meta)
-            return meta
 
-        self._write_index(rows)
         return meta
 
     def set_hotkey(self, macro_id: str, hotkey: Optional[str]) -> Dict[str, Any]:

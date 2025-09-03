@@ -7,7 +7,7 @@ import subprocess
 import os
 from typing import Optional
 
-from PySide6.QtCore import Qt, QFileSystemWatcher, QTimer
+from PySide6.QtCore import Qt, QFileSystemWatcher, QTimer, QObject, Signal, Slot
 from PySide6.QtGui import QFont, QAction
 from PySide6.QtWidgets import QStyle
 from PySide6.QtWidgets import (
@@ -24,6 +24,23 @@ from .services.macro_store import MacroStore
 from .services.replay_service import ReplayService, ReplayError
 from .services.hotkey_service import HotkeyService
 from .services.recorder_service import RecorderService
+
+
+# -------- Kleiner UI-Dispatcher (thread-sicher via Signal -> Slot) --------
+class _UiDispatcher(QObject):
+    trigger = Signal(object)  # fn: Callable[[], None]
+
+    def __init__(self, parent: QObject | None = None):
+        super().__init__(parent)
+        self.trigger.connect(self._on_trigger)
+
+    @Slot(object)
+    def _on_trigger(self, fn):
+        try:
+            print("[UI] dispatcher invoke", flush=True)
+            fn()
+        except Exception as ex:
+            print(f"[UI] dispatcher error: {ex!r}", flush=True)
 
 
 # -------- Details dialog --------
@@ -76,13 +93,17 @@ class MainWindow(QMainWindow):
         self.store = MacroStore()
         self._data = self.store.load_all()
 
-        # Replay + hotkeys
+        # Replay
         self.replay = ReplayService(self.store)
+
+        # Hotkeys + Dispatcher (thread-sicher)
+        self._dispatcher = _UiDispatcher(self)
         self.hotkeys = HotkeyService()
-        self.hotkeys.on_start_request = lambda macro_id: QTimer.singleShot(0, lambda m=macro_id: self._hotkey_start_requested(m))
-        self.hotkeys.on_stop_request = lambda: QTimer.singleShot(0, self._hotkey_stop_requested)
-        self.hotkeys.start()
+        self.hotkeys.set_ui_dispatcher(lambda fn: self._dispatcher.trigger.emit(fn))
+        self.hotkeys.on_start_request = self._hotkey_start_requested
+        self.hotkeys.on_stop_request = self._hotkey_stop_requested
         self.hotkeys.set_stop_hotkey("<ctrl>+<shift>+<alt>+s")  # reserviert
+        self.hotkeys.start()
 
         # Recorder
         self.recorder = RecorderService(self.store)
@@ -511,15 +532,16 @@ class MainWindow(QMainWindow):
         return {}
 
     def _hotkey_start_requested(self, macro_id: str):
-        self._minimize()
+        print(f"[UI] hotkey_start_requested({macro_id})", flush=True)
         self._play_macro(macro_id)
 
     def _hotkey_stop_requested(self):
+        print("[UI] hotkey_stop_requested()", flush=True)
         try:
             self.replay.stop_replay()
             self.statusBar().showMessage("Replay stopped (hotkey).", 2000)
-        except Exception:
-            pass
+        except Exception as ex:
+            self.statusBar().showMessage(f"Stop failed: {ex}", 2000)
 
     def _poll_replay(self):
         err = self.replay.poll_finish()
@@ -531,6 +553,7 @@ class MainWindow(QMainWindow):
 
     # ---------- Replay ----------
     def _play_macro(self, macro_id: str):
+        print(f"[UI] _play_macro called: macro_id={macro_id}", flush=True)
         try:
             self.replay.start_replay(macro_id)
             self.statusBar().showMessage("Replay started. (Stop: Ctrl+Shift+Alt+S)", 4000)
