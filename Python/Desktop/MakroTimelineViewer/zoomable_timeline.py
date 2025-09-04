@@ -20,9 +20,10 @@ class ZoomableTimeline(QWidget):
         # Timeline state
         self.min_scale = 0.02
         self.max_scale = 10000.0
-        self.min_time = -10.0
+        self.min_time = -100.0
         self.scale = 1.0
         self.offset = 0.0
+        self.start_time = 0.0
         
         # Mouse interaction
         self.dragging = False
@@ -35,6 +36,7 @@ class ZoomableTimeline(QWidget):
         self.animation_timer.start(16)
         self.animation_time = 0
         
+        
         # Load data
         self.load_data(action_log_path, event_data, mouse_moves_log_path)
         
@@ -44,10 +46,9 @@ class ZoomableTimeline(QWidget):
         """Load event and movement data"""
         # Load events
         if action_log_path is None:
-            self.events = EventLoader.process_events(event_data)
+            self.events, self.start_time = EventLoader.process_events(event_data)
         else:
-            self.events = EventLoader.load_events_from_log(action_log_path)
-        
+            self.events, self.start_time  = EventLoader.load_events_from_log(action_log_path)
         # Initialize scale and offset based on events
         if self.events:
             event_times = [float(event["time"]) for event in self.events if event.get("time") is not None]
@@ -62,7 +63,10 @@ class ZoomableTimeline(QWidget):
                 self.offset = (max_time + min_time) / 2
         # Load movement data
         try:
-            self.graph_times, self.graph_values = EventLoader.load_movements_per_second(mouse_moves_log_path)
+    
+            self.graph_times, self.graph_values = EventLoader.load_movements_per_second(mouse_moves_log_path, self.start_time)
+            print(f"Loaded {len(self.graph_times)} movement data points.")
+            print(self.graph_values)
         except:
             self.graph_times, self.graph_values = [], []
         
@@ -102,7 +106,6 @@ class ZoomableTimeline(QWidget):
         
         start_time = self.offset - width / (2 * self.scale)
         end_time = self.offset + width / (2 * self.scale)
-        
         # Draw minor ticks
         painter.setPen(QPen(QColor(80, 80, 80), 1))
         if minor_interval > 0:
@@ -152,7 +155,6 @@ class ZoomableTimeline(QWidget):
         
         label_interval = self.get_label_interval(pixel_range)
         label_start = math.floor(start_time / label_interval) * label_interval
-        
         time = label_start
         while time <= end_time:
             x = self.time_to_pixel(time, width)
@@ -190,17 +192,24 @@ class ZoomableTimeline(QWidget):
             
     def format_time(self, seconds):
         """Format time value as string"""
-        if seconds < 0:
-            return ""
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        secs = seconds % 60
+        # Handle negative times
+        negative = seconds < 0
+        abs_seconds = abs(seconds)
+        
+        hours = int(abs_seconds // 3600)
+        minutes = int((abs_seconds % 3600) // 60)
+        secs = abs_seconds % 60
+        
+        # Format the time string
         if hours > 0:
-            return f"{hours:02d}:{minutes:02d}:{secs:06.3f}"
+            time_str = f"{hours:02d}:{minutes:02d}:{secs:06.3f}"
         elif minutes > 0:
-            return f"{minutes:02d}:{secs:06.3f}"
+            time_str = f"{minutes:02d}:{secs:06.3f}"
         else:
-            return f"{secs:.3f}s"
+            time_str = f"{secs:.3f}s"
+        
+        # Add negative sign if needed
+        return f"-{time_str}" if negative else time_str
             
     def time_to_pixel(self, time, width):
         """Convert time value to pixel position"""

@@ -70,6 +70,7 @@ class EventTableModel(QtCore.QAbstractTableModel):
 
         if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
             start_time = self.manager.events[0].time if self.manager.events else None
+           # print("actions" + str(start_time))
             col = index.column()
             if col == 0:
                 return row

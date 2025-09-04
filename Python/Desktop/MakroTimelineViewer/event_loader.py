@@ -4,18 +4,22 @@ import numpy as np
 from PySide6.QtGui import QColor
 
 class EventLoader:
+    
+    
+    
     @staticmethod
     def load_events_from_log(log_file):
         """Load events from actions.log file and keep raw event data for popup"""
         try:
             events = []
             first_time = None
+            print( "fisttime" + str(first_time))
             with open(log_file, "r") as f:
                 for line in f:
                     try:
                         event = json.loads(line)
                         if first_time is None:
-                            first_time = event["time"]
+                             first_time = event["time"]
                         relative_time = event["time"] - first_time
                         label = f"{event.get('type', '')} {event.get('key', '')}".strip()
                         if event.get('x') is not None and event.get('y') is not None:
@@ -37,7 +41,7 @@ class EventLoader:
                         continue
             if not events:
                 return []
-            return events
+            return events, first_time
         except FileNotFoundError:
             return []
     @staticmethod
@@ -50,7 +54,7 @@ class EventLoader:
                 if first_time is None:
                     first_time = event["time"]
                 relative_time = event["time"] - first_time
-
+                print("first time" + str(first_time))
                 label = f"{event.get('type', '')} {event.get('key', '')}".strip()
                 if event.get('x') is not None and event.get('y') is not None:
                     label += f" at ({event['x']}, {event['y']})"
@@ -71,10 +75,10 @@ class EventLoader:
             except KeyError:
                 continue  # skip malformed events
 
-        return events
+        return events, first_time
 
     @staticmethod
-    def load_movements_per_second(log_file):
+    def load_movements_per_second(log_file, start_time):
         """Load mouse movement data from mouse_moves.log"""
         try:
             timestamps = []
@@ -88,8 +92,7 @@ class EventLoader:
                         continue
             if not timestamps:
                 return EventLoader.get_sample_data()
-            
-            start_time = min(timestamps)
+            print( "start" + str(start_time))
             counts = defaultdict(int)
             
             with open(log_file, "r") as f:

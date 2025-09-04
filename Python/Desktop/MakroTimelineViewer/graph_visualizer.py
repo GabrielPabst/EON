@@ -18,7 +18,6 @@ class GraphVisualizer:
         self.graph_top = height * 0.1
         start_time = self.timeline.offset - width / (2 * self.timeline.scale)
         end_time = self.timeline.offset + width / (2 * self.timeline.scale)
-
         self.draw_y_axis_scale(painter, width, height)
 
         padding = max((end_time - start_time) * 0.5, 1.0)
