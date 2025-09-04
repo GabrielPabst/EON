@@ -352,7 +352,7 @@ class ActionLogFrontend(QtWidgets.QMainWindow):
         # Screenshot preview
         self.preview_label = QtWidgets.QLabel("No screenshot")
         self.preview_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.preview_label.setMinimumHeight(200)
+        self.preview_label.setMaximumHeight(200)
         self.preview_label.setFrameShape(QtWidgets.QFrame.StyledPanel)
         right.addWidget(self._wrap_in_group("Screenshot Preview", self.preview_label))
 

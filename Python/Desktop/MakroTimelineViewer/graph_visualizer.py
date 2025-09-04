@@ -8,41 +8,44 @@ class GraphVisualizer:
         self.timeline = timeline
         self.graph_height = None
         self.graph_top = None
-        
+
     def draw_background_graph(self, painter, width, height, center_y):
         """Draw the background movement graph"""
         if len(self.timeline.graph_times) == 0:
             return
-            
+
         self.graph_height = height * 0.4
         self.graph_top = height * 0.1
         start_time = self.timeline.offset - width / (2 * self.timeline.scale)
         end_time = self.timeline.offset + width / (2 * self.timeline.scale)
-        
+
         self.draw_y_axis_scale(painter, width, height)
-        
+
         padding = max((end_time - start_time) * 0.5, 1.0)
         mask = (self.timeline.graph_times >= start_time - padding) & (self.timeline.graph_times <= end_time + padding)
         visible_times = self.timeline.graph_times[mask]
         visible_values = self.timeline.graph_values[mask]
-        
+
         if len(visible_times) == 0:
             return
-            
+
         # Extend visible range by one point on each side if possible
         min_idx = np.where(self.timeline.graph_times == visible_times[0])[0][0]
         max_idx = np.where(self.timeline.graph_times == visible_times[-1])[0][0]
-        
+
         if min_idx > 0:
             visible_times = np.insert(visible_times, 0, self.timeline.graph_times[min_idx - 1])
             visible_values = np.insert(visible_values, 0, self.timeline.graph_values[min_idx - 1])
         if max_idx < len(self.timeline.graph_times) - 1:
             visible_times = np.append(visible_times, self.timeline.graph_times[max_idx + 1])
             visible_values = np.append(visible_values, self.timeline.graph_values[max_idx + 1])
-            
+
+        # Normalize values to 0–100
+        visible_values = self._normalize_values(visible_values, 0, 100)
+
         # Smooth the data
         x_new, y_smooth = self._smooth_data(visible_times, visible_values)
-        
+
         # Scale and draw the graph
         self._draw_graph(painter, x_new, y_smooth, visible_times, visible_values, width, height)
 
@@ -50,52 +53,50 @@ class GraphVisualizer:
         """Draw the y-axis scale and labels"""
         if not hasattr(self.timeline, 'graph_values') or len(self.timeline.graph_values) == 0:
             return
-            
+
         painter.save()
         font = QFont("Arial", 8)
         painter.setFont(font)
         label_color = QColor(200, 200, 200, 180)
         line_color = QColor(100, 100, 100, 100)
-        
-        max_value = 100  # force max value for scale to 100
+
+        max_value = 100  # Since we normalize to 0-100
         scale_steps = 5
-        step_size = self._round_to_nice_number(max_value / scale_steps)
-        max_scale = step_size * (math.ceil(max_value / step_size))
-        
+        step_size = max_value / scale_steps
+        max_scale = max_value
+
         # Draw scale lines and labels
         for i in range(scale_steps + 1):
             value = i * step_size
-            if value > max_scale:
-                break
-            y_ratio = value / max_scale
+            y_ratio = value / max_scale if max_scale > 0 else 0
             y_pos = height - (self.graph_top + y_ratio * self.graph_height)
-            
+
             # Draw horizontal grid line
             painter.setPen(QPen(line_color, 1, Qt.DashLine))
             painter.drawLine(30, y_pos, width - 10, y_pos)
-            
+
             # Draw value label
             painter.setPen(label_color)
             label = str(int(value))
             text_rect = painter.fontMetrics().boundingRect(label)
-            painter.drawText(5, 
-                    y_pos - text_rect.height() // 2,  # Center vertically
-                    25, 
-                    text_rect.height(),
-                    Qt.AlignRight | Qt.AlignVCenter,
-                    label)
-        
+            painter.drawText(5,
+                             y_pos - text_rect.height() // 2,
+                             25,
+                             text_rect.height(),
+                             Qt.AlignRight | Qt.AlignVCenter,
+                             label)
+
         # Draw y-axis title
         painter.setPen(label_color)
         font.setPointSize(9)
         painter.setFont(font)
         text_rect = painter.fontMetrics().boundingRect("Movements per second")
-        painter.drawText(30, 
-                        height - (height * 0.1) + text_rect.height() + 5,
-                        text_rect.width() + 10, 
-                        text_rect.height(),
-                        Qt.AlignLeft | Qt.AlignTop,
-                        "Movements per second")
+        painter.drawText(30,
+                         height - (height * 0.1) + text_rect.height() + 5,
+                         text_rect.width() + 10,
+                         text_rect.height(),
+                         Qt.AlignLeft | Qt.AlignTop,
+                         "Movements per second")
         painter.restore()
 
     def _round_to_nice_number(self, value):
@@ -113,6 +114,15 @@ class GraphVisualizer:
         else:
             nice_number = 10
         return nice_number * magnitude
+
+    def _normalize_values(self, values, new_min, new_max):
+        """Normalize array to new_min - new_max"""
+        if len(values) == 0:
+            return values
+        old_min, old_max = np.min(values), np.max(values)
+        if old_max == old_min:
+            return np.full_like(values, (new_max + new_min) / 2)
+        return (values - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
 
     def _smooth_data(self, visible_times, visible_values):
         """Smooth the graph data using interpolation"""
@@ -138,19 +148,18 @@ class GraphVisualizer:
 
     def _draw_graph(self, painter, x_new, y_smooth, visible_times, visible_values, width, height):
         """Draw the actual graph with area fill and data points"""
-        max_val_for_points = 100  # fixed max for normalization
         if len(y_smooth) > 0:
-            y_min, y_max = np.min(y_smooth), np.max(y_smooth)
-            normalized_values = (y_smooth - y_min) / (y_max - y_min) if y_max != y_min else np.zeros_like(y_smooth)
+            # Already normalized to 0-100
+            normalized_values = y_smooth / 100
             scaled_values = self.graph_top + normalized_values * self.graph_height
         else:
             scaled_values = np.full_like(y_smooth, self.graph_top + self.graph_height * 0.5)
-            
+
         # Create paths for area and line
         path = QPainterPath()
         stroke_path = QPainterPath()
         points = []
-        
+
         for i, (time_val, y_val) in enumerate(zip(x_new, scaled_values)):
             x_pixel = self.timeline.time_to_pixel(time_val, width)
             y_pixel = height - y_val
@@ -161,37 +170,36 @@ class GraphVisualizer:
             else:
                 path.lineTo(x_pixel, y_pixel)
                 stroke_path.lineTo(x_pixel, y_pixel)
-                
+
         # Draw area fill and line
         if len(points) > 1:
             path.lineTo(points[-1][0], height - (height * 0.1))
             path.lineTo(points[0][0], height - (height * 0.1))
             path.closeSubpath()
-            
+
             painter.save()
             fill_color = QColor(79, 195, 247, 60)
             stroke_color = QColor(79, 195, 247, 150)
-            
+
             # Draw fill
             painter.setBrush(fill_color)
             painter.setPen(Qt.NoPen)
             painter.drawPath(path)
-            
+
             # Draw line
             painter.setPen(QPen(stroke_color, 3))
             painter.setBrush(Qt.NoBrush)
             painter.drawPath(stroke_path)
-            
+
             # Draw data points
             dot_color = QColor(255, 82, 82, 120)
             painter.setBrush(dot_color)
             painter.setPen(Qt.NoPen)
-            
+
             for time_val, value in zip(visible_times, visible_values):
                 x_pixel = self.timeline.time_to_pixel(time_val, width)
-                norm_val = value / max_val_for_points  # normalized to max 100
-                norm_val = min(norm_val, 1.0)
+                norm_val = value / 100
                 y_pixel = height - (height * 0.1 + norm_val * height * 0.4)
                 painter.drawEllipse(int(x_pixel - 3), int(y_pixel - 3), 6, 6)
-                
+
             painter.restore()

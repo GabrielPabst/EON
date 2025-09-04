@@ -79,7 +79,7 @@ class ZoomableTimeline(QWidget):
             
             width = self.width()
             height = self.height()
-            center_y = height // 2 -30
+            center_y = height // 2 -50
             
             # Draw components
             self.graph_visualizer.draw_background_graph(painter, width, height, center_y)
