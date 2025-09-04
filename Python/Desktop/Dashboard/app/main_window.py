@@ -9,12 +9,11 @@ from typing import Optional
 
 from PySide6.QtCore import Qt, QFileSystemWatcher, QTimer, QObject, Signal, Slot
 from PySide6.QtGui import QFont, QAction
-from PySide6.QtWidgets import QStyle
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
-    QLineEdit, QComboBox, QLabel, QPushButton, QTableWidget, QTableWidgetItem,
-    QHeaderView, QStatusBar, QSplitter, QSizePolicy, QApplication,
-    QSystemTrayIcon, QMenu, QInputDialog, QDialog, QTextEdit, QDialogButtonBox
+    QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox, QLabel,
+    QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QStatusBar, QSplitter,
+    QSizePolicy, QApplication, QSystemTrayIcon, QMenu, QInputDialog, QDialog,
+    QTextEdit, QDialogButtonBox, QStyle, QMessageBox
 )
 
 from .widgets.side_nav import SideNav
@@ -26,14 +25,11 @@ from .services.hotkey_service import HotkeyService
 from .services.recorder_service import RecorderService
 
 
-# -------- Kleiner UI-Dispatcher (thread-sicher via Signal -> Slot) --------
 class _UiDispatcher(QObject):
-    trigger = Signal(object)  # fn: Callable[[], None]
-
+    trigger = Signal(object)
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
         self.trigger.connect(self._on_trigger)
-
     @Slot(object)
     def _on_trigger(self, fn):
         try:
@@ -43,35 +39,27 @@ class _UiDispatcher(QObject):
             print(f"[UI] dispatcher error: {ex!r}", flush=True)
 
 
-# -------- Details dialog --------
 class MacroDetailsDialog(QDialog):
     def __init__(self, meta: dict, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Macro details")
         self.setMinimumWidth(520)
         self.setAttribute(Qt.WA_DeleteOnClose, True)
-
         name = meta.get("name") or "Unnamed"
         author = meta.get("author") or "Unknown"
         created = meta.get("created_at") or meta.get("downloaded_at") or ""
         counts = meta.get("counts", {})
         desc = meta.get("description") or (meta.get("extra") or {}).get("description") or "No description available."
-
         root = QVBoxLayout(self); root.setContentsMargins(16, 16, 16, 16); root.setSpacing(10)
-
         title = QLabel(name); title.setObjectName("md_title"); root.addWidget(title)
         meta_line = QLabel(f"Author: {author}    •    Created: {created}"); meta_line.setObjectName("md_meta"); root.addWidget(meta_line)
-
         if counts:
             cnt = QLabel(f"actions.log: {counts.get('actions.log', 0)}   mouse_moves.log: {counts.get('mouse_moves.log', 0)}")
             cnt.setObjectName("md_meta"); root.addWidget(cnt)
-
         lab = QLabel("Description"); lab.setObjectName("md_label"); root.addWidget(lab)
         txt = QTextEdit(); txt.setReadOnly(True); txt.setPlainText(desc); root.addWidget(txt, 1)
-
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject); buttons.accepted.connect(self.accept); root.addWidget(buttons)
-
         self.setStyleSheet("""
         QDialog { background:#0a0a0a; color:#f2f2f2; }
         #md_title { font-size:20px; font-weight:800; margin-bottom:2px; }
@@ -89,37 +77,29 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("EON – Macro Hub")
         self.resize(1180, 700)
 
-        # Data store
         self.store = MacroStore()
         self._data = self.store.load_all()
 
-        # Replay
         self.replay = ReplayService(self.store)
 
-        # Hotkeys + Dispatcher (thread-sicher)
         self._dispatcher = _UiDispatcher(self)
         self.hotkeys = HotkeyService()
         self.hotkeys.set_ui_dispatcher(lambda fn: self._dispatcher.trigger.emit(fn))
         self.hotkeys.on_start_request = self._hotkey_start_requested
         self.hotkeys.on_stop_request = self._hotkey_stop_requested
-        self.hotkeys.set_stop_hotkey("<ctrl>+<shift>+<alt>+s")  # reserviert
+        self.hotkeys.set_stop_hotkey("<ctrl>+<shift>+<alt>+s")
         self.hotkeys.start()
 
-        # Recorder
         self.recorder = RecorderService(self.store)
         self._record_win: RecordWindow | None = None
 
-        # Poll subprocess finish
         self._poll = QTimer(self); self._poll.setInterval(400); self._poll.timeout.connect(self._poll_replay); self._poll.start()
 
-        # Ctrl+Q to quit
         quit_action = QAction("Quit", self); quit_action.setShortcut("Ctrl+Q"); quit_action.triggered.connect(QApplication.instance().quit)
         self.addAction(quit_action)
 
-        # Tray
         self._setup_tray()
 
-        # Watcher
         self.fs_watcher = None
         try:
             watch_dir = str(self.store.root)
@@ -131,38 +111,28 @@ class MainWindow(QMainWindow):
             if self.statusBar():
                 self.statusBar().showMessage(f"Watcher disabled: {e}", 4000)
 
-        # Root
         root = QWidget(self)
         root_layout = QVBoxLayout(root); root_layout.setContentsMargins(12, 12, 12, 12); root_layout.setSpacing(12)
         self.setCentralWidget(root)
 
-        # Topbar
         topbar = QWidget(); tb = QHBoxLayout(topbar); tb.setContentsMargins(0, 0, 0, 0); tb.setSpacing(12)
-
         def field(lbl: str, w: QWidget) -> QWidget:
             wrap = QWidget(); v = QVBoxLayout(wrap); v.setContentsMargins(0, 0, 0, 0); v.setSpacing(4)
             l = QLabel(lbl); l.setObjectName("fieldLabel"); v.addWidget(l); v.addWidget(w); return wrap
-
         self.categoryBox = QComboBox(); self.categoryBox.addItems(["All", "Office", "Audio", "Video", "Utilities"]); self.categoryBox.setMinimumWidth(160)
         self.authorEdit = QLineEdit(); self.authorEdit.setPlaceholderText("Author…"); self.authorEdit.setMinimumWidth(180)
         self.timeBox = QComboBox(); self.timeBox.addItems(["All", "Today", "Last 7 days", "Last month", "Last 3 months"]); self.timeBox.setMinimumWidth(190)
-
         tb.addWidget(field("Category", self.categoryBox))
         tb.addWidget(field("Author", self.authorEdit))
         tb.addWidget(field("Download time", self.timeBox))
-
         spacer = QWidget(); spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed); tb.addWidget(spacer, 1)
-
         self.searchEdit = QLineEdit(); self.searchEdit.setPlaceholderText("Search…"); self.searchEdit.setClearButtonEnabled(True)
         self.searchEdit.setMinimumHeight(38); self.searchEdit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed); tb.addWidget(self.searchEdit, 2)
-
         self.btnRecord = QPushButton("Record"); self.btnRecord.setMinimumHeight(38); self.btnRecord.clicked.connect(self._open_record_window); tb.addWidget(self.btnRecord)
         root_layout.addWidget(topbar)
 
-        # Splitter
         split = QSplitter(Qt.Horizontal, self)
 
-        # Table
         list_container = QWidget()
         lv = QVBoxLayout(list_container); lv.setContentsMargins(0, 0, 0, 0); lv.setSpacing(10)
 
@@ -180,12 +150,11 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(1, QHeaderView.Stretch)
         header.setSectionResizeMode(2, QHeaderView.Fixed)
         header.setSectionResizeMode(3, QHeaderView.Fixed)
-        self.table.setColumnWidth(2, 320)
+        self.table.setColumnWidth(2, 420)
         self.table.setColumnWidth(3, 220)
 
         lv.addWidget(self.table, 1)
 
-        # Side nav
         self.side = SideNav()
         self.side.requestImport.connect(self._open_import_overlay)
 
@@ -193,20 +162,16 @@ class MainWindow(QMainWindow):
         split.setStretchFactor(0, 1); split.setStretchFactor(1, 0)
         root_layout.addWidget(split, 1)
 
-        # Statusbar
         self.setStatusBar(QStatusBar())
 
-        # Filter wiring
         self.searchEdit.textChanged.connect(self._refresh_table)
         self.categoryBox.currentIndexChanged.connect(self._refresh_table)
         self.authorEdit.textChanged.connect(self._refresh_table)
         self.timeBox.currentIndexChanged.connect(self._refresh_table)
 
-        # Styles + initial data
         self._apply_styles()
         self._refresh_table()
 
-    # ---------- Record window ----------
     def _open_record_window(self):
         try:
             if self._record_win and self._record_win.isVisible():
@@ -233,12 +198,10 @@ class MainWindow(QMainWindow):
                 self._data = self.store.load_all()
         except Exception:
             self._data = self.store.load_all()
-
         self._refresh_table()
         name = meta.get("name") or "New macro"
         self.statusBar().showMessage(f"Saved recording: {name}", 3000)
 
-    # ---------- Tray ----------
     def _setup_tray(self):
         if not QSystemTrayIcon.isSystemTrayAvailable():
             self.tray = None; return
@@ -264,7 +227,6 @@ class MainWindow(QMainWindow):
     def _restore_from_taskbar_or_tray(self):
         self.showNormal(); self.raise_(); self.activateWindow()
 
-    # ---------- Import ----------
     def _open_import_overlay(self):
         dlg = ImportOverlay(self)
         dlg.move(self.geometry().center() - dlg.rect().center())
@@ -272,7 +234,6 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("Import canceled.", 1800); return
         if not dlg.selected_path:
             self.statusBar().showMessage("No path selected.", 2000); return
-
         try:
             kind = dlg.selected_kind
             if kind == "zip":
@@ -289,12 +250,10 @@ class MainWindow(QMainWindow):
         except Exception as ex:
             self.statusBar().showMessage(f"Import failed: {ex}", 5000)
 
-    # ---------- Watcher / Reload ----------
     def _reload_from_disk(self):
         self._data = self.store.load_all()
         self._refresh_table()
 
-    # ---------- Helpers ----------
     def _row_desc(self, row: dict) -> str:
         return row.get("description") or (row.get("extra") or {}).get("description") or ""
 
@@ -306,7 +265,6 @@ class MainWindow(QMainWindow):
             return f"Ctrl+Shift+Alt+{s.upper()}"
         return s
 
-    # ---------- Table / Filters ----------
     def _passes_filters(self, row: dict) -> bool:
         if (c := self.categoryBox.currentText()) != "All" and row.get("category") != c:
             return False
@@ -337,11 +295,7 @@ class MainWindow(QMainWindow):
     def _make_desc_cell(self, row: dict) -> QWidget:
         desc = self._row_desc(row).strip() or "No description"
         short = (desc[:117].rstrip() + "…") if len(desc) > 120 else desc
-        btn = QPushButton(short)
-        btn.setToolTip("Show details")
-        btn.setObjectName("descChip")
-        btn.setFlat(True)
-        btn.setCursor(Qt.PointingHandCursor)
+        btn = QPushButton(short); btn.setToolTip("Show details"); btn.setObjectName("descChip"); btn.setFlat(True); btn.setCursor(Qt.PointingHandCursor)
         btn.clicked.connect(lambda _, r=row: self._show_details(r))
         wrap = QWidget(); h = QHBoxLayout(wrap); h.setContentsMargins(6, 6, 6, 6); h.setSpacing(0); h.addWidget(btn)
         return wrap
@@ -354,7 +308,6 @@ class MainWindow(QMainWindow):
     def _refresh_table(self):
         rows = [r for r in self._data if self._passes_filters(r)]
         self.table.setRowCount(len(rows))
-
         name_font = QFont(); name_font.setPointSize(15); name_font.setWeight(QFont.Medium)
 
         for r, row in enumerate(rows):
@@ -365,14 +318,22 @@ class MainWindow(QMainWindow):
 
             self.table.setCellWidget(r, 1, self._make_desc_cell(row))
 
-            btnEdit = QPushButton("Edit"); btnPlay = QPushButton("Play"); btnFolder = QPushButton("Open folder")
-            for b in (btnEdit, btnPlay, btnFolder):
-                b.setProperty("cellAction", True); b.setMinimumHeight(36); b.setMinimumWidth(96); b.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            btnEdit = QPushButton("Edit")
+            btnPlay = QPushButton("Play")
+            btnFolder = QPushButton("Open folder")
+            btnDelete = QPushButton("Delete")
+            for b in (btnEdit, btnPlay, btnFolder, btnDelete):
+                b.setProperty("cellAction", True)
+                b.setMinimumHeight(36)
+                b.setMinimumWidth(96)
+                b.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
             btnEdit.clicked.connect(lambda _, id=row["id"]: self._open_action_editor(id))
             btnPlay.clicked.connect(lambda _, id=row["id"]: self._play_macro(id))
             btnFolder.clicked.connect(lambda _, id=row["id"]: self._open_folder(id))
-            container = QWidget(); hl = QHBoxLayout(container); hl.setContentsMargins(0, 0, 0, 0); hl.setSpacing(10)
-            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay); hl.addWidget(btnFolder); hl.addStretch(1)
+            btnDelete.clicked.connect(lambda _, id=row["id"]: self._delete_macro(id))
+            container = QWidget()
+            hl = QHBoxLayout(container); hl.setContentsMargins(0, 0, 0, 0); hl.setSpacing(10)
+            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay); hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addStretch(1)
             self.table.setCellWidget(r, 2, container)
 
             hk_text = self._format_hotkey_display(row.get("hotkey"))
@@ -384,10 +345,9 @@ class MainWindow(QMainWindow):
 
             self.table.setRowHeight(r, 56)
 
-        self.table.setColumnWidth(2, 320); self.table.setColumnWidth(3, 220)
+        self.table.setColumnWidth(2, 420); self.table.setColumnWidth(3, 220)
         self._sync_hotkeys(rows)
 
-    # ---------- Editor ----------
     def _ensure_editor_on_path(self) -> Path:
         desktop_root = Path(__file__).resolve().parents[2]
         viewer_dir = desktop_root / "MakroTimelineViewer"
@@ -456,7 +416,6 @@ class MainWindow(QMainWindow):
             if hasattr(win, "_refresh_timeline"):
                 try: win._refresh_timeline()
                 except Exception: pass
-
             try:
                 if getattr(win.manager, "events", None):
                     if hasattr(win, "_select_row") and callable(getattr(win, "_select_row")):
@@ -486,7 +445,6 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
-    # ---------- Hotkeys ----------
     def _sync_hotkeys(self, rows):
         for row in rows:
             self.hotkeys.set_macro_hotkey(row["id"], row.get("hotkey"))
@@ -494,15 +452,12 @@ class MainWindow(QMainWindow):
     def _set_hotkey_for(self, macro_id: str):
         current = self._find_meta(macro_id).get("hotkey") or ""
         text, ok = QInputDialog.getText(
-            self,
-            "Set hotkey",
+            self, "Set hotkey",
             "Letter (a–z). It will trigger with Ctrl+Shift+Alt+<letter>.\n"
-            "Leave empty to remove:",
-            text=current,
+            "Leave empty to remove:", text=current,
         )
         if not ok:
             return
-
         letter = (text or "").strip().lower()
         if letter == "":
             normalized: Optional[str] = None
@@ -512,7 +467,6 @@ class MainWindow(QMainWindow):
             if letter == "s":
                 self.statusBar().showMessage("Letter 's' is reserved for Stop (Ctrl+Shift+Alt+S).", 4000); return
             normalized = letter
-
         try:
             meta = self.store.set_hotkey(macro_id, normalized)
             for i, row in enumerate(self._data):
@@ -530,6 +484,28 @@ class MainWindow(QMainWindow):
             if r["id"] == macro_id:
                 return r
         return {}
+
+    def _delete_macro(self, macro_id: str):
+        meta = self._find_meta(macro_id)
+        name = meta.get("name") if meta else macro_id
+        box = QMessageBox(self)
+        box.setWindowTitle("Delete macro")
+        box.setText(f"Delete '{name}'?\nThis macro will be removed from Macro Hub and its files moved to the Trash.")
+        box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        box.setDefaultButton(QMessageBox.No)
+        if box.exec() != QMessageBox.Yes:
+            return
+        try:
+            try:
+                self.replay.stop_replay()
+            except Exception:
+                pass
+            self.store.delete_macro(macro_id)
+            self._data = [r for r in self._data if r.get("id") != macro_id]
+            self._refresh_table()
+            self.statusBar().showMessage(f"Deleted: {name}", 3000)
+        except Exception as e:
+            self.statusBar().showMessage(f"Delete failed: {e}", 5000)
 
     def _hotkey_start_requested(self, macro_id: str):
         print(f"[UI] hotkey_start_requested({macro_id})", flush=True)
@@ -551,7 +527,6 @@ class MainWindow(QMainWindow):
             else:
                 self.statusBar().showMessage("Replay finished.", 2500)
 
-    # ---------- Replay ----------
     def _play_macro(self, macro_id: str):
         print(f"[UI] _play_macro called: macro_id={macro_id}", flush=True)
         try:
@@ -563,20 +538,34 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.statusBar().showMessage(f"Failed to start replay: {e}", 6000)
 
-    # ---------- Open macro folder ----------
     def _open_folder(self, macro_id: str):
-        path = Path(self.store.dir_for(macro_id))
+        target = Path(self.store.dir_for(macro_id))
+        chosen: Optional[Path] = target
+        try:
+            if not target.exists():
+                found = self.store.find_existing_dir(macro_id) if hasattr(self.store, "find_existing_dir") else None
+                if found:
+                    chosen = Path(found)
+        except Exception:
+            pass
+        if chosen is None or not chosen.exists():
+            chosen = Path(self.store.root)
+        try:
+            chosen.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            self.statusBar().showMessage(f"Could not ensure directory: {chosen}", 4000)
+            return
         try:
             if sys.platform.startswith("win"):
-                subprocess.Popen(["explorer", str(path)])
+                os.startfile(str(chosen))  # type: ignore[attr-defined]
             elif sys.platform == "darwin":
-                subprocess.Popen(["open", str(path)])
+                subprocess.Popen(["open", str(chosen)])
             else:
-                subprocess.Popen(["xdg-open", str(path)])
+                subprocess.Popen(["xdg-open", str(chosen)])
+            self.statusBar().showMessage(f"Opened folder: {chosen}", 2500)
         except Exception as e:
             self.statusBar().showMessage(f"Could not open folder: {e}", 4000)
 
-    # ---------- Styles ----------
     def _apply_styles(self):
         self.setStyleSheet("""
         QMainWindow { background:#0a0a0a; color:#f2f2f2; }

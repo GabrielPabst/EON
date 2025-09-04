@@ -7,7 +7,7 @@ import signal
 import tempfile
 import subprocess
 from pathlib import Path
-from typing import Optional, Callable, Dict, Any
+from typing import Optional, Callable, Dict, Any, List
 
 from .macro_store import MacroStore
 
@@ -23,12 +23,20 @@ class RecorderService:
       end_recording()    -> stop capture, keep temp (user decides)
       save_recording()   -> import temp into MacroStore and cleanup
       discard_recording()-> delete temp and cleanup
+
+    Client-Ort-Auflösung (ohne feste Pfade):
+      1) explizit über Parameter client_dir
+      2) env: EON_RECORDER_CLIENT
+      3) relativ zu dieser Datei auto-discover:
+         - <...>/Python/Recorder-Client
+         - <...>/Python/Desktop/Recorder-Client
+         - <...>/Recorder-Client (eine Ebene über Python)
     """
 
     def __init__(
         self,
         store: MacroStore,
-        desktop_root: Optional[Path] = None,
+        desktop_root: Optional[Path] = None,   # beibehalten für Abwärtskompatibilität (optional)
         client_dir: Optional[Path] = None,
     ) -> None:
         self.store = store
@@ -37,20 +45,8 @@ class RecorderService:
         self.on_started: Optional[Callable[[Path], None]] = None
         self.on_stopped: Optional[Callable[[Optional[dict], Optional[str]], None]] = None
 
-        if client_dir is not None:
-            self.recorder_client_dir = Path(client_dir)
-        else:
-            env_dir = os.environ.get("EON_RECORDER_CLIENT")
-            if env_dir:
-                self.recorder_client_dir = Path(env_dir)
-            else:
-                fixed = Path(r"D:\DiplEON\EON\Python\Recorder-Client")
-                if fixed.exists():
-                    self.recorder_client_dir = fixed
-                else:
-                    if desktop_root is None:
-                        desktop_root = Path(__file__).resolve().parents[3]  # .../Desktop
-                    self.recorder_client_dir = desktop_root / "Recorder-Client"
+        # ---- Recorder-Client-Verzeichnis robust ermitteln (ohne fixed path) ----
+        self.recorder_client_dir = self._resolve_client_dir(client_dir, desktop_root)
 
     # ---- process state ----
     def is_recording(self) -> bool:
@@ -76,8 +72,9 @@ class RecorderService:
         )
         try:
             creation = (subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform.startswith("win") else 0)
+            # -u: unbuffered, damit stdout/stderr nicht puffern (störungsärmer)
             self._proc = subprocess.Popen(
-                [sys.executable, "-c", inline],
+                [sys.executable, "-u", "-c", inline],
                 cwd=str(self.recorder_client_dir),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -207,7 +204,7 @@ class RecorderService:
         try:
             if sys.platform.startswith("win"):
                 try:
-                    self._proc.send_signal(signal.CTRL_BREAK_EVENT)  # type: ignore[attr-defined]
+                    self._proc.send_signal(signal.CTRL_BREAK_EVENT)
                 except Exception:
                     self._proc.terminate()
             else:
@@ -221,12 +218,55 @@ class RecorderService:
         finally:
             self._proc = None
 
+    def _resolve_client_dir(self, client_dir: Optional[Path], desktop_root: Optional[Path]) -> Path:
+        # 1) Explizit übergeben
+        if client_dir:
+            p = Path(client_dir).resolve()
+            return p
+
+        # 2) Env
+        env_dir = os.environ.get("EON_RECORDER_CLIENT")
+        if env_dir:
+            p = Path(env_dir).resolve()
+            return p
+
+        # 3) Auto-Discovery
+        here = Path(__file__).resolve()
+        try:
+            python_root = here.parents[3]
+        except IndexError:
+            python_root = here.parent
+
+        if desktop_root is None:
+            desktop_root = python_root / "Desktop"
+
+        candidates: List[Path] = [
+            python_root / "Recorder-Client",
+            desktop_root / "Recorder-Client",
+            python_root.parent / "Recorder-Client",
+        ]
+
+        for c in candidates:
+            try:
+                if (c.exists() and (c / "recorder_client.py").exists()):
+                    return c.resolve()
+            except Exception:
+                pass
+
+        tried = " | ".join(str(c) for c in candidates)
+        raise RecorderError(
+            "Recorder-Client not found.\n"
+            "Tried:\n"
+            f"  {tried}\n"
+            "Hint: pass client_dir=Path('.../Recorder-Client') or set EON_RECORDER_CLIENT."
+        )
+
     def _check_client_dir(self) -> None:
         if not self.recorder_client_dir.exists():
             raise RecorderError(
                 "Recorder-Client not found: "
                 f"{self.recorder_client_dir}\n"
-                "Tip: pass client_dir=Path(r'D:\\DiplEON\\EON\\Python\\Recorder-Client') "
+                "Tip: pass client_dir=Path('.../Recorder-Client') "
                 "or set EON_RECORDER_CLIENT env var."
             )
         if not (self.recorder_client_dir / "recorder_client.py").exists():
