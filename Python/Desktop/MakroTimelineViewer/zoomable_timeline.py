@@ -79,7 +79,7 @@ class ZoomableTimeline(QWidget):
             
             width = self.width()
             height = self.height()
-            center_y = height // 2
+            center_y = height // 2 -30
             
             # Draw components
             self.graph_visualizer.draw_background_graph(painter, width, height, center_y)
@@ -184,10 +184,6 @@ class ZoomableTimeline(QWidget):
         painter.setFont(QFont("Arial", 10))
         painter.setPen(QPen(QColor(150, 150, 150), 1))
         info_lines = [
-            f"Scale: 1 pixel = {1/self.scale:.3f} seconds",
-            f"Visible range: {self.width()/self.scale:.1f} seconds",
-            f"Offset: {self.format_time(self.offset)}",
-            "Mouse: Drag to pan, Wheel to zoom"
         ]
         for i, line in enumerate(info_lines):
             painter.drawText(10, 20 + i * 15, line)

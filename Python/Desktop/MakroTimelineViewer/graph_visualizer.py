@@ -79,11 +79,11 @@ class GraphVisualizer:
             label = str(int(value))
             text_rect = painter.fontMetrics().boundingRect(label)
             painter.drawText(5, 
-                           y_pos + text_rect.height() // 2 - 2, 
-                           25, 
-                           text_rect.height(),
-                           Qt.AlignRight | Qt.AlignVCenter,
-                           label)
+                    y_pos - text_rect.height() // 2,  # Center vertically
+                    25, 
+                    text_rect.height(),
+                    Qt.AlignRight | Qt.AlignVCenter,
+                    label)
         
         # Draw y-axis title
         painter.setPen(label_color)
