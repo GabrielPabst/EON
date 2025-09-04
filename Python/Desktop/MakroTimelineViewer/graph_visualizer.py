@@ -57,17 +57,17 @@ class GraphVisualizer:
         label_color = QColor(200, 200, 200, 180)
         line_color = QColor(100, 100, 100, 100)
         
-        max_value = np.max(self.timeline.graph_values)
+        max_value = 100  # force max value for scale to 100
         scale_steps = 5
-        step_size = self._round_to_nice_number(max_value / scale_steps) if max_value > 0 else 1
-        max_scale = step_size * (math.ceil(max_value / step_size)) if max_value > 0 else step_size
+        step_size = self._round_to_nice_number(max_value / scale_steps)
+        max_scale = step_size * (math.ceil(max_value / step_size))
         
         # Draw scale lines and labels
         for i in range(scale_steps + 1):
             value = i * step_size
             if value > max_scale:
                 break
-            y_ratio = value / max_scale if max_scale > 0 else 0
+            y_ratio = value / max_scale
             y_pos = height - (self.graph_top + y_ratio * self.graph_height)
             
             # Draw horizontal grid line
@@ -138,9 +138,10 @@ class GraphVisualizer:
 
     def _draw_graph(self, painter, x_new, y_smooth, visible_times, visible_values, width, height):
         """Draw the actual graph with area fill and data points"""
-        if len(y_smooth) > 0 and np.max(y_smooth) > np.min(y_smooth):
+        max_val_for_points = 100  # fixed max for normalization
+        if len(y_smooth) > 0:
             y_min, y_max = np.min(y_smooth), np.max(y_smooth)
-            normalized_values = (y_smooth - y_min) / (y_max - y_min)
+            normalized_values = (y_smooth - y_min) / (y_max - y_min) if y_max != y_min else np.zeros_like(y_smooth)
             scaled_values = self.graph_top + normalized_values * self.graph_height
         else:
             scaled_values = np.full_like(y_smooth, self.graph_top + self.graph_height * 0.5)
@@ -188,10 +189,8 @@ class GraphVisualizer:
             
             for time_val, value in zip(visible_times, visible_values):
                 x_pixel = self.timeline.time_to_pixel(time_val, width)
-                if np.max(visible_values) > np.min(visible_values):
-                    norm_val = (value - np.min(visible_values)) / (np.max(visible_values) - np.min(visible_values))
-                else:
-                    norm_val = 0.5
+                norm_val = value / max_val_for_points  # normalized to max 100
+                norm_val = min(norm_val, 1.0)
                 y_pixel = height - (height * 0.1 + norm_val * height * 0.4)
                 painter.drawEllipse(int(x_pixel - 3), int(y_pixel - 3), 6, 6)
                 
