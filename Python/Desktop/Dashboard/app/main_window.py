@@ -23,6 +23,7 @@ from .services.macro_store import MacroStore
 from .services.replay_service import ReplayService, ReplayError
 from .services.hotkey_service import HotkeyService
 from .services.recorder_service import RecorderService
+from .dialogs.settings_dialog import SettingsDialog
 
 
 class _UiDispatcher(QObject):
@@ -157,6 +158,7 @@ class MainWindow(QMainWindow):
 
         self.side = SideNav()
         self.side.requestImport.connect(self._open_import_overlay)
+        self.side.requestSettings.connect(self._open_settings_dialog)
 
         split.addWidget(list_container); split.addWidget(self.side)
         split.setStretchFactor(0, 1); split.setStretchFactor(1, 0)
@@ -444,6 +446,11 @@ class MainWindow(QMainWindow):
             os.chdir(old_cwd)
         except Exception:
             pass
+
+    def _open_settings_dialog(self):
+        dlg = SettingsDialog(self)
+        if dlg.exec() == QDialog.Accepted:
+            self.statusBar().showMessage("Settings saved.", 2000)
 
     def _sync_hotkeys(self, rows):
         for row in rows:
