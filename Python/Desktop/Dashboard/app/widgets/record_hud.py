@@ -3,21 +3,20 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, QTimer, QTime
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QPushButton, QApplication
 
+
 class RecordHUD(QWidget):
     """
-    Small floating HUD (always-on-top) that shows elapsed time and a Stop button.
-    Emits no signals; caller passes a stop_callback to be invoked when Stop is clicked.
+    Tiny always-on-top HUD showing elapsed time and a Stop button.
+    Auto-closes if `is_active()` returns False (recorder ended externally) and
+    will invoke `stop_callback` so the owner can transition into post-record state.
     """
-    def __init__(self, stop_callback, parent=None):
+    def __init__(self, stop_callback, is_active=None, parent=None):
         super().__init__(parent)
-        self._stop_cb = stop_callback
+        self._stop_cb = stop_callback           # callable()
+        self._is_active = is_active             # callable() -> bool, optional
         self._time = QTime(0, 0, 0)
 
-        self.setWindowFlags(
-            Qt.WindowStaysOnTopHint
-            | Qt.FramelessWindowHint
-            | Qt.Tool
-        )
+        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setStyleSheet("""
             QWidget { background: rgba(20,20,20, 220); border-radius: 12px; }
@@ -41,20 +40,35 @@ class RecordHUD(QWidget):
         lay.addStretch(1)
         lay.addWidget(self.btn)
 
+        # 500ms: frequent enough to detect external stop quickly
         self.timer = QTimer(self)
-        self.timer.setInterval(1000)
+        self.timer.setInterval(500)
         self.timer.timeout.connect(self._tick)
 
         self.btn.clicked.connect(self._on_stop)
 
     def start(self):
         self._time = QTime(0, 0, 0)
-        self.timer.start()
         self._place_top_right()
         self.show()
+        self.timer.start()
 
     def _tick(self):
-        self._time = self._time.addSecs(1)
+        # External stop?
+        try:
+            if callable(self._is_active) and not self._is_active():
+                try:
+                    if callable(self._stop_cb):
+                        self._stop_cb()
+                finally:
+                    self._shutdown()
+                return
+        except Exception:
+            # if callback fails, keep HUD running rather than crashing
+            pass
+
+        # Update label roughly once per second
+        self._time = self._time.addMSecs(self.timer.interval())
         self.lbl.setText(f"REC {self._time.toString('mm:ss')}")
 
     def _on_stop(self):
@@ -62,8 +76,14 @@ class RecordHUD(QWidget):
             if callable(self._stop_cb):
                 self._stop_cb()
         finally:
+            self._shutdown()
+
+    def _shutdown(self):
+        try:
             self.timer.stop()
-            self.close()
+        except Exception:
+            pass
+        self.close()
 
     def _place_top_right(self):
         screen = QApplication.primaryScreen().availableGeometry()

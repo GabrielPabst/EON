@@ -1,3 +1,4 @@
+# app/dialogs/record_window.py
 from __future__ import annotations
 from typing import Optional, Dict
 
@@ -24,7 +25,6 @@ class RecordWindow(QDialog):
         self._apply_styles()
         self._set_state(idle=True)
 
-    # ---- UI ----
     def _build_ui(self):
         self.setWindowTitle("Record Macro")
         self.setMinimumWidth(640)
@@ -37,7 +37,6 @@ class RecordWindow(QDialog):
         title.setObjectName("title")
         root.addWidget(title)
 
-        # Name
         self.name_edit = QLineEdit()
         self.name_edit.setPlaceholderText("Macro name (required)")
         root.addWidget(self._field("Name", self.name_edit))
@@ -46,14 +45,12 @@ class RecordWindow(QDialog):
         hint.setObjectName("hint")
         root.addWidget(hint)
 
-        # Beschreibung (sichtbar nach Ende der Aufnahme)
         self.desc_edit = QTextEdit()
         self.desc_edit.setPlaceholderText("Optional: describe what the macro does…")
         self.desc_wrap = self._field("Description", self.desc_edit)
         self.desc_wrap.setVisible(False)
         root.addWidget(self.desc_wrap)
 
-        # Buttons
         self.row_idle = self._buttons([
             ("Start recording", self._start),
             ("Close", self._close),
@@ -103,14 +100,13 @@ class RecordWindow(QDialog):
         QPushButton:hover { background:#ffc24d; } QPushButton:pressed { background:#e5a831; }
         """)
 
-    # ---- State ----
     def _set_state(self, *, idle: bool):
         self._ended_unsaved = not idle
         self.row_idle.setVisible(idle)
         self.row_after.setVisible(not idle)
         self.desc_wrap.setVisible(not idle)
 
-    # ---- Actions ----
+    # Actions
     def _start(self):
         name = self.name_edit.text().strip()
         if not name:
@@ -122,8 +118,13 @@ class RecordWindow(QDialog):
             self._toast(f"{e}")
             return
 
-        self._hud = RecordHUD(stop_callback=self._hud_stopped)
+        # HUD that also auto-closes on external stop
+        self._hud = RecordHUD(
+            stop_callback=self._hud_stopped,
+            is_active=self.recorder.is_recording
+        )
         self._hud.start()
+
         self.hide()
         if self.parent() and hasattr(self.parent(), "showMinimized"):
             self.parent().showMinimized()
@@ -134,12 +135,17 @@ class RecordWindow(QDialog):
         except Exception as e:
             self._toast(f"Could not stop recording: {e}")
             return
+        if self._hud:
+            self._hud = None
         self.showNormal(); self.raise_(); self.activateWindow()
         if self.parent() and hasattr(self.parent(), "showNormal"):
             self.parent().showNormal(); self.parent().raise_(); self.parent().activateWindow()
         self._set_state(idle=False)
 
     def _again(self):
+        if self._hud:
+            self._hud.close()
+            self._hud = None
         try:
             self.recorder.discard_recording()
         except Exception:
@@ -169,6 +175,12 @@ class RecordWindow(QDialog):
         self.accept()
 
     def _close(self):
+        if self._hud:
+            try:
+                self._hud.close()
+            except Exception:
+                pass
+            self._hud = None
         if self._ended_unsaved or self.recorder.is_recording():
             try:
                 self.recorder.discard_recording()
