@@ -1,0 +1,324 @@
+openapi: 3.0.3
+info:
+  title: Makros API
+  description: API for managing accounts and makros with authentication and marketplace features.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Makro:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        desc:
+          type: string
+        usecase:
+          type: string
+        author_id:
+          type: integer
+        author_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/accounts/register:
+    post:
+      summary: Register a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, password]
+              properties:
+                name:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  account: { $ref: '#/components/schemas/Account' }
+        '400':
+          description: Missing data
+        '409':
+          description: Username already exists
+
+  /api/accounts/login:
+    post:
+      summary: Login and get JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, password]
+              properties:
+                name: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: { type: string }
+                  account: { $ref: '#/components/schemas/Account' }
+        '401':
+          description: Invalid credentials
+
+  /api/accounts/data:
+    get:
+      summary: Get account data
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account: { $ref: '#/components/schemas/Account' }
+        '404':
+          description: Account not found
+
+    put:
+      summary: Update account data
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Updated account
+        '404':
+          description: Account not found
+        '409':
+          description: Username already exists
+
+  /api/makros:
+    post:
+      summary: Upload a new makro (ZIP file)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, name]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                name:
+                  type: string
+                desc:
+                  type: string
+                usecase:
+                  type: string
+      responses:
+        '201':
+          description: Makro uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  makro: { $ref: '#/components/schemas/Makro' }
+        '400':
+          description: Invalid file or data
+
+  /api/makros/{makro_id}:
+    get:
+      summary: Get makro details
+      parameters:
+        - in: path
+          name: makro_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Makro details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  makro: { $ref: '#/components/schemas/Makro' }
+        '404':
+          description: Makro not found
+
+    put:
+      summary: Update makro
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: makro_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                desc: { type: string }
+                usecase: { type: string }
+      responses:
+        '200':
+          description: Updated makro
+        '403':
+          description: Unauthorized
+        '404':
+          description: Not found
+
+    delete:
+      summary: Delete makro
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: makro_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Makro deleted
+        '403':
+          description: Unauthorized
+        '404':
+          description: Not found
+
+  /api/makros/{makro_id}/download:
+    get:
+      summary: Download makro file
+      parameters:
+        - in: path
+          name: makro_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: File download (ZIP)
+          content:
+            application/zip: {}
+        '404':
+          description: Makro or file not found
+
+  /api/marketplace:
+    get:
+      summary: List all makros (paginated)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: per_page
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Paginated makros list
+
+  /api/marketplace/random:
+    get:
+      summary: Get random makros
+      parameters:
+        - in: query
+          name: count
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Random makros list
+
+  /api/marketplace/search:
+    get:
+      summary: Search makros
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: usecase
+          schema: { type: string }
+        - in: query
+          name: author
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: per_page
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Search results
+
+  /api/my-makros:
+    get:
+      summary: List current user's makros
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: per_page
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Paginated makros list
