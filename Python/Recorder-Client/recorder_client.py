@@ -118,6 +118,8 @@ class ActionRecorder:
     def on_press(self, key):
         key_str = self.normalize_key(key)
         now = self._current_time()
+        if key_str == STOP_KEY:
+            return False
         if key_str not in self.key_press_times:
             self.key_press_times[key_str] = now
             action = {
@@ -130,9 +132,7 @@ class ActionRecorder:
             }
             self.actions.append(action)
             self._log_action(action)
-        # Stop recording on 'q'
-        if key_str == STOP_KEY:
-            return False
+        
 
     def on_release(self, key):
         key_str = self.normalize_key(key)

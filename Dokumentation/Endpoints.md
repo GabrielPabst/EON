@@ -25,5 +25,3 @@ Backend Endpoints:
    2. GET Random number of Makros
    
    3. GET Makros with Filter
-
-
