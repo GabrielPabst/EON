@@ -608,7 +608,7 @@ class MarketplaceWidget(QWidget):
     
     def filter_changed(self):
         """Handle filter combo box changes"""
-        if self.search_input.text().strip() or self.author_filter.text().strip():
+        if self.search_input.text().strip() or self.author_filter.text().strip() or self.usecase_filter.currentText() != "All Categories":
             # If there are search terms, perform search
             self.search_makros()
         else:
