@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox, QLabel,
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QStatusBar, QSplitter,
     QSizePolicy, QApplication, QSystemTrayIcon, QMenu, QInputDialog, QDialog,
-    QTextEdit, QDialogButtonBox, QStyle, QMessageBox
+    QTextEdit, QDialogButtonBox, QStyle, QMessageBox, QFileDialog
 )
 
 from .widgets.side_nav import SideNav
@@ -151,7 +151,7 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(1, QHeaderView.Stretch)
         header.setSectionResizeMode(2, QHeaderView.Fixed)
         header.setSectionResizeMode(3, QHeaderView.Fixed)
-        self.table.setColumnWidth(2, 420)
+        self.table.setColumnWidth(2, 520)
         self.table.setColumnWidth(3, 220)
 
         lv.addWidget(self.table, 1)
@@ -322,20 +322,22 @@ class MainWindow(QMainWindow):
 
             btnEdit = QPushButton("Edit")
             btnPlay = QPushButton("Play")
+            btnExport = QPushButton("Export")
             btnFolder = QPushButton("Open folder")
             btnDelete = QPushButton("Delete")
-            for b in (btnEdit, btnPlay, btnFolder, btnDelete):
+            for b in (btnEdit, btnPlay, btnExport, btnFolder, btnDelete):
                 b.setProperty("cellAction", True)
                 b.setMinimumHeight(36)
                 b.setMinimumWidth(96)
                 b.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
             btnEdit.clicked.connect(lambda _, id=row["id"]: self._open_action_editor(id))
             btnPlay.clicked.connect(lambda _, id=row["id"]: self._play_macro(id))
+            btnExport.clicked.connect(lambda _, id=row["id"]: self._export_macro(id))
             btnFolder.clicked.connect(lambda _, id=row["id"]: self._open_folder(id))
             btnDelete.clicked.connect(lambda _, id=row["id"]: self._delete_macro(id))
             container = QWidget()
             hl = QHBoxLayout(container); hl.setContentsMargins(0, 0, 0, 0); hl.setSpacing(10)
-            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay); hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addStretch(1)
+            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay); hl.addWidget(btnExport); hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addStretch(1)
             self.table.setCellWidget(r, 2, container)
 
             hk_text = self._format_hotkey_display(row.get("hotkey"))
@@ -347,7 +349,7 @@ class MainWindow(QMainWindow):
 
             self.table.setRowHeight(r, 56)
 
-        self.table.setColumnWidth(2, 420); self.table.setColumnWidth(3, 220)
+        self.table.setColumnWidth(2, 520); self.table.setColumnWidth(3, 220)
         self._sync_hotkeys(rows)
 
     def _ensure_editor_on_path(self) -> Path:
@@ -572,6 +574,29 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"Opened folder: {chosen}", 2500)
         except Exception as e:
             self.statusBar().showMessage(f"Could not open folder: {e}", 4000)
+
+    # ------------ Export ------------
+
+    def _export_macro(self, macro_id: str):
+        """Export a macro folder as ZIP (non-destructive)."""
+        try:
+            # Vorschlag: Name aus meta.json (falls vorhanden), kompakt ohne Spaces
+            suggested_base = self.store.suggest_export_basename(macro_id)  # bereits sanitizt + ohne Leerzeichen
+            suggested = str(Path.home() / f"{suggested_base}.zip")
+
+            out_path, _ = QFileDialog.getSaveFileName(
+                self, "Export macro as ZIP", suggested, "ZIP archive (*.zip)"
+            )
+            if not out_path:
+                self.statusBar().showMessage("Export canceled.", 1800)
+                return
+            if not out_path.lower().endswith(".zip"):
+                out_path = out_path + ".zip"
+
+            final_path = self.store.export_zip(macro_id, out_path)
+            self.statusBar().showMessage(f"Exported to: {final_path}", 4000)
+        except Exception as e:
+            self.statusBar().showMessage(f"Export failed: {e}", 6000)
 
     def _apply_styles(self):
         self.setStyleSheet("""

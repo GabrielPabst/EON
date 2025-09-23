@@ -8,10 +8,15 @@ from typing import Any, Dict, Optional
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QGroupBox, QFormLayout, QLineEdit, QDoubleSpinBox,
-    QSpinBox, QDialogButtonBox, QLabel, QMessageBox, QSlider, QWidget, QHBoxLayout, QPushButton
+    QSpinBox, QDialogButtonBox, QLabel, QMessageBox, QSlider, QWidget,
+    QHBoxLayout, QPushButton, QFileDialog, QRadioButton, QButtonGroup
 )
 
+# WICHTIG: MacroStore für Directory-Setting/Migration
+from ..services.macro_store import MacroStore
+
 _ASSIGN_RE = re.compile(r"^\s*(?P<key>\w+)\s*=\s*(?P<val>.+?)\s*(#.*)?$")
+
 
 def _find_python_root() -> Path:
     here = Path(__file__).resolve()
@@ -19,6 +24,7 @@ def _find_python_root() -> Path:
         if parent.name.lower() == "python":
             return parent
     return here.parents[3]
+
 
 def _locate_config(env_var: str, folder_name: str) -> Optional[Path]:
     p = os.environ.get(env_var)
@@ -32,11 +38,13 @@ def _locate_config(env_var: str, folder_name: str) -> Optional[Path]:
         return cand
     return None
 
+
 def _read_text(p: Path) -> str:
     try:
         return p.read_text(encoding="utf-8")
     except Exception:
         return ""
+
 
 def _parse_assigns(text: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
@@ -52,8 +60,10 @@ def _parse_assigns(text: str) -> Dict[str, Any]:
             out[k] = raw.strip("'\"")
     return out
 
+
 def _format_py(v: Any) -> str:
     return repr(v)
+
 
 def _rewrite_config(original: str, updates: Dict[str, Any]) -> str:
     lines = original.splitlines()
@@ -74,11 +84,12 @@ def _rewrite_config(original: str, updates: Dict[str, Any]) -> str:
         out += "\n"
     return out
 
+
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Settings")
-        self.setMinimumWidth(600)
+        self.setMinimumWidth(700)
         self.setAttribute(Qt.WA_DeleteOnClose, True)
 
         self.mc_cfg = _locate_config("EON_MACRO_CLIENT", "Makro-Client")
@@ -100,6 +111,48 @@ class SettingsDialog(QDialog):
             warn.setText("\n".join(msgs))
             root.addWidget(warn)
 
+        # -------- Storage (Macro root + Migration) --------
+        self._storage_group = QGroupBox("Storage")
+        storage_form = QFormLayout(self._storage_group)
+
+        self._current_root = str(MacroStore.get_config_root())
+        self._root_edit = QLineEdit(self._current_root)
+        self._root_edit.setReadOnly(True)
+        btn_choose = QPushButton("Choose…")
+        btn_choose.clicked.connect(self._choose_root)
+
+        row_root = QWidget()
+        row_h = QHBoxLayout(row_root)
+        row_h.setContentsMargins(0, 0, 0, 0)
+        row_h.setSpacing(8)
+        row_h.addWidget(self._root_edit, 1)
+        row_h.addWidget(btn_choose, 0)
+        storage_form.addRow("Macro directory:", row_root)
+
+        # Migration mode
+        self._migrate_group = QButtonGroup(self)
+        self._rb_move = QRadioButton("Move (recommended)")
+        self._rb_copy = QRadioButton("Copy")
+        self._rb_none = QRadioButton("Do not migrate (start empty)")
+        self._rb_move.setChecked(True)
+
+        self._migrate_group.addButton(self._rb_move)
+        self._migrate_group.addButton(self._rb_copy)
+        self._migrate_group.addButton(self._rb_none)
+
+        row_mig = QWidget()
+        row_mig_h = QHBoxLayout(row_mig)
+        row_mig_h.setContentsMargins(0, 0, 0, 0)
+        row_mig_h.setSpacing(12)
+        row_mig_h.addWidget(self._rb_move)
+        row_mig_h.addWidget(self._rb_copy)
+        row_mig_h.addWidget(self._rb_none)
+        row_mig_h.addStretch(1)
+        storage_form.addRow("When changing directory:", row_mig)
+
+        root.addWidget(self._storage_group)
+
+        # -------- Macro Client --------
         self._factory_mc: Dict[str, Any] = {
             "DEFAULT_THRESHOLD": 0.6,
             "CONFIDENCE_THRESHOLD": 0.8,
@@ -141,6 +194,7 @@ class SettingsDialog(QDialog):
 
             root.addWidget(mc_group)
 
+        # -------- Recorder Client --------
         self.rc_fields: Dict[str, object] = {}
         if self.rc_cfg:
             rc_vals = _parse_assigns(_read_text(self.rc_cfg))
@@ -154,6 +208,7 @@ class SettingsDialog(QDialog):
             self.rc_fields["STOP_KEY"] = w_stop
             root.addWidget(rc_group)
 
+        # -------- Buttons --------
         btns = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         self._btn_revert = QPushButton("Revert")
         self._btn_defaults = QPushButton("Restore defaults")
@@ -165,6 +220,7 @@ class SettingsDialog(QDialog):
         btns.rejected.connect(self.reject)
         root.addWidget(btns)
 
+        # -------- Styles --------
         self.setStyleSheet("""
         QDialog { background:#0a0a0a; color:#f2f2f2; }
         QGroupBox { border:1px solid #2b2b2b; border-radius:10px; margin-top:10px; padding:12px;}
@@ -177,6 +233,7 @@ class SettingsDialog(QDialog):
         QDialogButtonBox QPushButton:hover { background:#ffc24d; } QDialogButtonBox QPushButton:pressed { background:#e5a831; }
         """)
 
+    # ---------- UI helpers ----------
     def _add_double_slider(self, form: QFormLayout, label: str, key: str,
                            value: float, lo: float, hi: float, step: float):
         slider = QSlider(Qt.Horizontal)
@@ -220,7 +277,17 @@ class SettingsDialog(QDialog):
         form.addRow(label, w)
         self.mc_fields[key] = w
 
+    # ---------- Storage actions ----------
+    def _choose_root(self):
+        start_dir = self._root_edit.text().strip() or str(Path.home())
+        chosen = QFileDialog.getExistingDirectory(self, "Choose macro directory", start_dir)
+        if not chosen:
+            return
+        self._root_edit.setText(chosen)
+
+    # ---------- Buttons callbacks ----------
     def _reset_to_initial(self):
+        # Macro Client
         if self.mc_fields:
             dt = self.mc_fields.get("DEFAULT_THRESHOLD")
             if isinstance(dt, dict):
@@ -237,12 +304,17 @@ class SettingsDialog(QDialog):
             sr = self.mc_fields.get("SEARCH_REGION_SIZE")
             if hasattr(sr, "setValue"):
                 sr.setValue(int(self._initial_mc["SEARCH_REGION_SIZE"]))  # type: ignore[attr-defined]
+        # Recorder Client
         if self.rc_fields:
             stop = self.rc_fields.get("STOP_KEY")
             if hasattr(stop, "setText"):
                 stop.setText(str(self._initial_rc.get("STOP_KEY", self._factory_rc["STOP_KEY"])))  # type: ignore[attr-defined]
+        # Storage
+        self._root_edit.setText(self._current_root)
+        self._rb_move.setChecked(True)
 
     def _apply_factory_defaults(self):
+        # Macro Client
         if self.mc_fields:
             dt = self.mc_fields.get("DEFAULT_THRESHOLD")
             if isinstance(dt, dict):
@@ -259,12 +331,40 @@ class SettingsDialog(QDialog):
             sr = self.mc_fields.get("SEARCH_REGION_SIZE")
             if hasattr(sr, "setValue"):
                 sr.setValue(int(self._factory_mc["SEARCH_REGION_SIZE"]))  # type: ignore[attr-defined]
+        # Recorder Client
         if self.rc_fields:
             stop = self.rc_fields.get("STOP_KEY")
             if hasattr(stop, "setText"):
                 stop.setText(str(self._factory_rc["STOP_KEY"]))  # type: ignore[attr-defined]
+        # Storage: keine harte "Factory" – aber wir setzen auf aktuellen gespeicherten Root zurück
+        self._root_edit.setText(self._current_root)
+        self._rb_move.setChecked(True)
 
     def _save(self):
+        # -------- Storage Save (Root + Migration) --------
+        try:
+            new_root = self._root_edit.text().strip()
+            if not new_root:
+                QMessageBox.warning(self, "Invalid directory", "Please choose a macro directory.")
+                return
+            current_root = self._current_root
+            # Nur wenn geändert:
+            if Path(new_root).resolve() != Path(current_root).resolve():
+                if self._rb_move.isChecked():
+                    mode = "move"
+                elif self._rb_copy.isChecked():
+                    mode = "copy"
+                else:
+                    mode = None
+                # Migration durchführen + Settings schreiben
+                ms = MacroStore()  # nimmt aktuellen Root aus settings.json
+                ms.set_root(new_root, migrate=mode)
+                self._current_root = str(MacroStore.get_config_root())
+        except Exception as e:
+            QMessageBox.critical(self, "Save failed (Storage)", f"Could not change macro directory:\n{e}")
+            return
+
+        # -------- Macro Client Save --------
         if self.mc_cfg:
             orig = _read_text(self.mc_cfg)
             if not orig:
@@ -289,6 +389,7 @@ class SettingsDialog(QDialog):
                 QMessageBox.critical(self, "Error", f"Save failed:\n{self.mc_cfg}\n{e}")
                 return
 
+        # -------- Recorder Client Save --------
         if self.rc_cfg:
             orig = _read_text(self.rc_cfg)
             if not orig:
@@ -306,5 +407,5 @@ class SettingsDialog(QDialog):
                 QMessageBox.critical(self, "Error", f"Save failed:\n{self.rc_cfg}\n{e}")
                 return
 
-        QMessageBox.information(self, "Saved", "Settings saved.")
+        QMessageBox.information(self, "Saved", "Settings saved.\n\nNote: Reopen the Macro list to refresh the new directory.")
         self.accept()
