@@ -159,18 +159,27 @@ class MakrosAPIClient:
         # Handle file input
         if isinstance(file_path, io.BytesIO):
             files['file'] = ('makro.zip', file_path, 'application/zip')
+            try:
+                response = self.session.post(url, data=data, files=files)
+                return self._handle_response(response)
+            finally:
+                if hasattr(file_path, 'close'):
+                    file_path.close()
         else:
             file_path = Path(file_path)
+            # Read the entire file into memory
             with open(file_path, 'rb') as f:
-                files['file'] = (file_path.name, f, 'application/zip')
-        
-        try:
-            response = self.session.post(url, data=data, files=files)
-            return self._handle_response(response)
-        finally:
-            for file_tuple in files.values():
-                if hasattr(file_tuple[1], 'close'):
-                    file_tuple[1].close()
+                file_content = f.read()
+            
+            # Create a new BytesIO object with the file content
+            file_data = io.BytesIO(file_content)
+            files['file'] = (file_path.name, file_data, 'application/zip')
+            
+            try:
+                response = self.session.post(url, data=data, files=files)
+                return self._handle_response(response)
+            finally:
+                file_data.close()
     
     def get_makro(self, makro_id: int) -> Dict[str, Any]:
         """
