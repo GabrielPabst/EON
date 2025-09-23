@@ -417,7 +417,7 @@ class MarketplaceWidget(QWidget):
                         'id': i + 1 + (self.current_page - 1) * self.per_page,
                         'name': f'Sample Makro {i + 1 + (self.current_page - 1) * self.per_page}',
                         'desc': f'This is a sample makro description for testing purposes. It demonstrates the marketplace functionality.',
-                        'usecase': 'Testing',
+                        'usecase': 'FAKE',
                         'author': {'name': f'User{i + 1}'}
                     })
                 
@@ -461,7 +461,7 @@ class MarketplaceWidget(QWidget):
                         'id': i + 100,
                         'name': f'{search_term.title()} Result {i + 1}',
                         'desc': f'Search result for "{search_term}". This makro matches your search criteria.',
-                        'usecase': usecase or 'Testing',
+                        'usecase': usecase or 'FAKE',
                         'author': {'name': f'Author{i + 1}'}
                     })
                 
@@ -503,7 +503,7 @@ class MarketplaceWidget(QWidget):
                         'id': random.randint(1000, 9999),
                         'name': f'Random Makro {random.randint(1, 100)}',
                         'desc': f'This is a randomly selected makro for discovery purposes.',
-                        'usecase': random.choice(['Productivity', 'Development', 'Gaming', 'Other']),
+                        'usecase': random.choice(['FAKE', 'FAKE', 'FAKE', 'FAKE']),
                         'author': {'name': f'RandomUser{random.randint(1, 50)}'}
                     })
                 

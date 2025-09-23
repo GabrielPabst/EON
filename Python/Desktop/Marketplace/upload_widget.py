@@ -202,23 +202,23 @@ class UploadWidget(QWidget):
         self.selected_file = None
 
         self.setWindowTitle("Upload Makro")
-        # responsive: do not use fixed size, but set sensible minimum
-        self.setMinimumSize(520, 520)
-        self.resize(720, 700)
+        # Set more reasonable minimum and default sizes
+        self.setMinimumSize(480, 400)  # Reduced minimum size
+        self.resize(600, 580)  # More compact default size
 
         self.init_ui()
         self.apply_styles()
 
     def init_ui(self):
         main_layout = QVBoxLayout()
-        main_layout.setSpacing(16)
-        main_layout.setContentsMargins(18, 18, 18, 18)
+        main_layout.setSpacing(0)  # Remove spacing as the scroll area will handle it
+        main_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins as the scroll area will handle it
 
         # Put everything into a scroll area so small screens can scroll
         content = QWidget()
         content_layout = QVBoxLayout()
-        content_layout.setSpacing(16)
-        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(12)  # Reduced spacing
+        content_layout.setContentsMargins(16, 16, 16, 16)  # Add padding inside scroll area
 
         # Header
         header = QLabel("UPLOAD MAKRO")
@@ -245,8 +245,8 @@ class UploadWidget(QWidget):
         details_group = QGroupBox("Makro Details")
         details_group.setObjectName("detailsGroup")
         details_layout = QVBoxLayout()
-        details_layout.setSpacing(10)
-        details_layout.setContentsMargins(8, 8, 8, 8)
+        details_layout.setSpacing(8)  # Slightly reduced spacing
+        details_layout.setContentsMargins(12, 12, 12, 12)  # Slightly increased margins for better spacing
 
         # Name field
         name_label = QLabel("Name *")
@@ -262,8 +262,9 @@ class UploadWidget(QWidget):
         self.desc_input = QTextEdit()
         self.desc_input.setPlaceholderText("Enter makro description (optional)...")
         self.desc_input.setObjectName("textField")
-        self.desc_input.setMaximumHeight(200)
-        self.desc_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.desc_input.setMinimumHeight(60)
+        self.desc_input.setMaximumHeight(120)  # Reduced maximum height
+        self.desc_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)  # Changed to Preferred
 
         # Use case field
         usecase_label = QLabel("Category")
@@ -293,24 +294,34 @@ class UploadWidget(QWidget):
         content_layout.addWidget(details_group)
 
         # Buttons row
+        # Buttons container with proper spacing
+        buttons_container = QFrame()
+        buttons_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        buttons_container.setObjectName("buttonsContainer")
+        
         buttons_row = QHBoxLayout()
-        buttons_row.setSpacing(12)
+        buttons_row.setSpacing(10)
+        buttons_row.setContentsMargins(0, 0, 0, 0)
 
         self.upload_button = QPushButton("UPLOAD TO MARKETPLACE")
         self.upload_button.setObjectName("uploadButton")
         self.upload_button.clicked.connect(self.handle_upload)
         self.upload_button.setEnabled(False)
+        self.upload_button.setFixedHeight(36)  # Fixed height for better appearance
         self.upload_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         self.clear_button = QPushButton("CLEAR FORM")
         self.clear_button.setObjectName("clearButton")
         self.clear_button.clicked.connect(self.clear_form)
-        self.clear_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.clear_button.setFixedHeight(36)  # Fixed height for better appearance
+        self.clear_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.clear_button.setMinimumWidth(120)  # Set minimum width for clear button
 
-        buttons_row.addWidget(self.upload_button, 3)
-        buttons_row.addWidget(self.clear_button, 1)
-
-        content_layout.addLayout(buttons_row)
+        buttons_row.addWidget(self.upload_button)
+        buttons_row.addWidget(self.clear_button)
+        
+        buttons_container.setLayout(buttons_row)
+        content_layout.addWidget(buttons_container)
 
         # Progress bar
         self.progress_bar = QProgressBar()
@@ -335,6 +346,8 @@ class UploadWidget(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(content)
         scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Prevent horizontal scrolling
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)     # Show vertical scrollbar only when needed
 
         main_layout.addWidget(scroll)
         self.setLayout(main_layout)
@@ -348,28 +361,43 @@ class UploadWidget(QWidget):
                 color: #f2f2f2;
                 font-family: 'Segoe UI', Arial, sans-serif;
             }
+            
+            QScrollArea {
+                border: none;
+                background-color: #0a0a0a;
+            }
+            
+            QScrollArea > QWidget > QWidget {
+                background-color: #0a0a0a;
+            }
 
             QLabel#header {
-                font-size: 22px;
+                font-size: 20px;
                 font-weight: bold;
                 color: #FFB238;
-                margin-bottom: 8px;
+                margin: 4px 0;
             }
 
             QGroupBox#fileGroup, QGroupBox#detailsGroup {
                 font-weight: bold;
                 color: #a9abb0;
                 border: 2px solid #2b2b2b;
-                border-radius: 8px;
+                border-radius: 6px;
                 margin-top: 6px;
-                padding-top: 12px;
+                padding-top: 10px;
             }
 
             QGroupBox#fileGroup::title, QGroupBox#detailsGroup::title {
                 subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 8px 0 8px;
+                left: 8px;
+                padding: 0 6px;
                 color: #FFB238;
+                font-size: 13px;
+            }
+            
+            #buttonsContainer {
+                background-color: transparent;
+                margin-top: 4px;
             }
 
             QLabel#fieldLabel {
