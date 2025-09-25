@@ -5,8 +5,8 @@ MOUSE_LOG = "mouse_moves.log"
 #MouseScreenshotFinder
 CONFIDENCE_THRESHOLD = 0.8
 MAX_ATTEMPTS = 3
-RETRY_DELAY = 2.0  # seconds
-SEARCH_REGION_SIZE = 100  # pixels (width/height of region around click)
+RETRY_DELAY = 2.0
+SEARCH_REGION_SIZE = 100
 
 #ImageFinderClient
 METHOD_TEMPLATE = "TEMPLATE"
