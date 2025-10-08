@@ -7,15 +7,16 @@ import subprocess
 import os
 from typing import Optional
 
-from PySide6.QtCore import Qt, QFileSystemWatcher, QTimer, QObject, Signal, Slot
-from PySide6.QtGui import QFont, QAction
+from PySide6.QtCore import Qt, QFileSystemWatcher, QTimer, QObject, Signal, Slot, QSize
+from PySide6.QtGui import QFont, QAction, QIcon
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox, QLabel,
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QStatusBar, QSplitter,
     QSizePolicy, QApplication, QSystemTrayIcon, QMenu, QInputDialog, QDialog,
-    QTextEdit, QDialogButtonBox, QStyle, QMessageBox, QFileDialog
+    QTextEdit, QDialogButtonBox, QStyle, QMessageBox, QFileDialog, 
 )
-
+from PySide6.QtGui import QPixmap, QPainter
+from PySide6.QtGui import QIcon, QPalette, QColor
 from .widgets.side_nav import SideNav
 from .dialogs.import_overlay import ImportOverlay
 from .dialogs.record_window import RecordWindow
@@ -316,28 +317,46 @@ class MainWindow(QMainWindow):
             item = QTableWidgetItem(row.get("name") or "Unnamed")
             item.setFont(name_font)
             item.setFlags(item.flags() & ~Qt.ItemIsEditable & ~Qt.ItemIsSelectable)
-            self.table.setItem(r, 0, item)
-
+            self.table.setItem(r, 0, item)  
             self.table.setCellWidget(r, 1, self._make_desc_cell(row))
+            
+           
 
-            btnEdit = QPushButton("Edit")
-            btnPlay = QPushButton("Play")
-            btnExport = QPushButton("Export")
-            btnFolder = QPushButton("Open folder")
-            btnDelete = QPushButton("Delete")
+            def colorize_icon(icon: QIcon, color: QColor) -> QIcon:
+                pixmap = icon.pixmap(64, 64)
+                painter = QPainter(pixmap)
+                painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+                painter.fillRect(pixmap.rect(), color)
+                painter.end()
+                return QIcon(pixmap)
+            
+            btnEdit = QPushButton()
+            btnEdit.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.DocumentProperties))
+            btnPlay = QPushButton()
+            btnPlay.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.MediaPlaybackStart))
+            btnExport = QPushButton()
+            btnExport.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.DocumentSaveAs))
+            btnFolder = QPushButton()
+            btnFolder.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.FolderOpen))
+            btnDelete = QPushButton()
+            btnDelete.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditDelete))
+
             for b in (btnEdit, btnPlay, btnExport, btnFolder, btnDelete):
                 b.setProperty("cellAction", True)
                 b.setMinimumHeight(36)
                 b.setMinimumWidth(96)
                 b.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+                b.setIcon(colorize_icon(b.icon(), QColor("black")))
+                
+            btnEdit.setMinimumWidth(42); btnPlay.setMinimumWidth(42); btnFolder.setMinimumWidth(42); btnDelete.setMinimumWidth(42)
             btnEdit.clicked.connect(lambda _, id=row["id"]: self._open_action_editor(id))
             btnPlay.clicked.connect(lambda _, id=row["id"]: self._play_macro(id))
-            btnExport.clicked.connect(lambda _, id=row["id"]: self._export_macro(id))
             btnFolder.clicked.connect(lambda _, id=row["id"]: self._open_folder(id))
             btnDelete.clicked.connect(lambda _, id=row["id"]: self._delete_macro(id))
+            btnExport.clicked.connect(lambda _, id=row["id"]: self._export_macro(id))
             container = QWidget()
             hl = QHBoxLayout(container); hl.setContentsMargins(0, 0, 0, 0); hl.setSpacing(10)
-            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay); hl.addWidget(btnExport); hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addStretch(1)
+            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay);  hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addWidget(btnExport);hl.addStretch(1)
             self.table.setCellWidget(r, 2, container)
 
             hk_text = self._format_hotkey_display(row.get("hotkey"))
