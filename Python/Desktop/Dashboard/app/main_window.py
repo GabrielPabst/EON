@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox, QLabel,
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QStatusBar, QSplitter,
     QSizePolicy, QApplication, QSystemTrayIcon, QMenu, QInputDialog, QDialog,
-    QTextEdit, QDialogButtonBox, QStyle, QMessageBox, QFileDialog, , QToolButton
+    QTextEdit, QDialogButtonBox, QStyle, QMessageBox, QFileDialog, QToolButton
 )
 from PySide6.QtGui import QPixmap, QPainter
 from PySide6.QtGui import QIcon, QPalette, QColor
@@ -146,8 +146,8 @@ class MainWindow(QMainWindow):
         list_container = QWidget()
         lv = QVBoxLayout(list_container); lv.setContentsMargins(0, 0, 0, 0); lv.setSpacing(10)
 
-        self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(["Macro", "Action", "Hotkey"])
+        self.table = QTableWidget(0, 4)
+        self.table.setHorizontalHeaderLabels(["Macro", "Action", "Actions", "Hotkey"])
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.verticalHeader().setVisible(False)
@@ -161,6 +161,7 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(2, QHeaderView.Fixed)
         self.table.setColumnWidth(1, 340)
         self.table.setColumnWidth(2, 230)
+        self.table.setColumnWidth(3, 140)
 
         lv.addWidget(self.table, 1)
 
@@ -362,6 +363,18 @@ class MainWindow(QMainWindow):
 
         return wrap
 
+    def _make_desc_cell(self, row: dict) -> QWidget:
+        desc = self._row_desc(row).strip() or "No description"
+        wrap = QWidget()
+        layout = QHBoxLayout(wrap)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setSpacing(10)
+        desc_label = QLabel(desc)
+        desc_label.setWordWrap(True)
+        desc_label.setObjectName("descLabel")
+        layout.addWidget(desc_label, 1)
+        return wrap
+
     def _show_details(self, row: dict):
         dlg = MacroDetailsDialog(row, self)
         dlg.move(self.geometry().center() - dlg.rect().center())
@@ -371,6 +384,11 @@ class MainWindow(QMainWindow):
         rows = [r for r in self._data if self._passes_filters(r)]
         rows = self._sort_rows(rows)
         self.table.setRowCount(len(rows))
+
+        # Define name_font here
+        name_font = QFont()
+        name_font.setPointSize(16)
+        name_font.setWeight(QFont.DemiBold)
 
         for r, row in enumerate(rows):
             item = QTableWidgetItem(row.get("name") or "Unnamed")
@@ -402,17 +420,17 @@ class MainWindow(QMainWindow):
 
             for b in (btnEdit, btnPlay, btnExport, btnFolder, btnDelete):
                 b.setProperty("cellAction", True)
-                b.setMinimumHeight(36)
-                b.setMinimumWidth(96)
-                b.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            hl = QHBoxLayout(container); hl.setContentsMargins(0, 0, 0, 0); hl.setSpacing(10)
+            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay);  hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addWidget(btnExport); hl.addStretch(1)
+            self.table.setCellWidget(r, 2, container)
                 b.setIcon(colorize_icon(b.icon(), QColor("black")))
                 
             btnEdit.setMinimumWidth(42); btnPlay.setMinimumWidth(42); btnFolder.setMinimumWidth(42); btnDelete.setMinimumWidth(42)
             btnEdit.clicked.connect(lambda _, id=row["id"]: self._open_action_editor(id))
             btnPlay.clicked.connect(lambda _, id=row["id"]: self._play_macro(id))
-            btnExport.clicked.connect(lambda _, id=row["id"]: self._export_macro(id))
             btnFolder.clicked.connect(lambda _, id=row["id"]: self._open_folder(id))
             btnDelete.clicked.connect(lambda _, id=row["id"]: self._delete_macro(id))
+            btnExport.clicked.connect(lambda _, id=row["id"]: self._export_macro(id))
             container = QWidget()
             hl = QHBoxLayout(container); hl.setContentsMargins(0, 0, 0, 0); hl.setSpacing(10)
             hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay);  hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addWidget(btnExport);hl.addStretch(1)
@@ -424,11 +442,11 @@ class MainWindow(QMainWindow):
             hk_btn.clicked.connect(lambda _, id=row["id"]: self._set_hotkey_for(id))
             hk_wrap = QWidget(); hk_l = QHBoxLayout(hk_wrap); hk_l.setContentsMargins(0, 0, 0, 0); hk_l.setSpacing(0)
             hk_l.addStretch(1); hk_l.addWidget(hk_btn, 0, Qt.AlignCenter); hk_l.addStretch(1)
-            self.table.setCellWidget(r, 2, hk_wrap)
+            self.table.setCellWidget(r, 3, hk_wrap)
 
             self.table.setRowHeight(r, 68)
 
-        self.table.setColumnWidth(1, 340); self.table.setColumnWidth(2, 230)
+        self.table.setColumnWidth(1, 340); self.table.setColumnWidth(2, 230); self.table.setColumnWidth(3, 140)
         self._sync_hotkeys(rows)
 
     def _ensure_editor_on_path(self) -> Path:
