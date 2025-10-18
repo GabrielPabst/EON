@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox, QLabel,
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QStatusBar, QSplitter,
     QSizePolicy, QApplication, QSystemTrayIcon, QMenu, QInputDialog, QDialog,
-    QTextEdit, QDialogButtonBox, QStyle, QMessageBox, QFileDialog
+    QTextEdit, QDialogButtonBox, QStyle, QMessageBox, QFileDialog, QToolButton
 )
 
 from .widgets.side_nav import SideNav
@@ -123,13 +123,21 @@ class MainWindow(QMainWindow):
         self.categoryBox = QComboBox(); self.categoryBox.addItems(["All", "Office", "Audio", "Video", "Utilities"]); self.categoryBox.setMinimumWidth(160)
         self.authorEdit = QLineEdit(); self.authorEdit.setPlaceholderText("Author…"); self.authorEdit.setMinimumWidth(180)
         self.timeBox = QComboBox(); self.timeBox.addItems(["All", "Today", "Last 7 days", "Last month", "Last 3 months"]); self.timeBox.setMinimumWidth(190)
+        self.hotkeyFilter = QComboBox(); self.hotkeyFilter.addItems(["All", "With hotkey", "Without hotkey"]); self.hotkeyFilter.setMinimumWidth(160)
+        self.sortBox = QComboBox()
+        self.sortBox.addItems(["Newest", "Oldest", "Most actions", "Fewest actions", "Name A–Z", "Name Z–A", "Hotkey first"])
+        self.sortBox.setMinimumWidth(170)
+
         tb.addWidget(field("Category", self.categoryBox))
         tb.addWidget(field("Author", self.authorEdit))
         tb.addWidget(field("Download time", self.timeBox))
+        tb.addWidget(field("Hotkey", self.hotkeyFilter))
+        tb.addWidget(field("Sort", self.sortBox))
+
         spacer = QWidget(); spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed); tb.addWidget(spacer, 1)
         self.searchEdit = QLineEdit(); self.searchEdit.setPlaceholderText("Search…"); self.searchEdit.setClearButtonEnabled(True)
-        self.searchEdit.setMinimumHeight(38); self.searchEdit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed); tb.addWidget(self.searchEdit, 2)
-        self.btnRecord = QPushButton("Record"); self.btnRecord.setMinimumHeight(38); self.btnRecord.clicked.connect(self._open_record_window); tb.addWidget(self.btnRecord)
+        self.searchEdit.setMinimumHeight(36); self.searchEdit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed); tb.addWidget(self.searchEdit, 2)
+        self.btnRecord = QPushButton("Record"); self.btnRecord.setMinimumHeight(36); self.btnRecord.clicked.connect(self._open_record_window); tb.addWidget(self.btnRecord)
         root_layout.addWidget(topbar)
 
         split = QSplitter(Qt.Horizontal, self)
@@ -137,8 +145,8 @@ class MainWindow(QMainWindow):
         list_container = QWidget()
         lv = QVBoxLayout(list_container); lv.setContentsMargins(0, 0, 0, 0); lv.setSpacing(10)
 
-        self.table = QTableWidget(0, 4)
-        self.table.setHorizontalHeaderLabels(["Name", "Description", "Action", "Hotkey"])
+        self.table = QTableWidget(0, 3)
+        self.table.setHorizontalHeaderLabels(["Macro", "Action", "Hotkey"])
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.verticalHeader().setVisible(False)
@@ -148,11 +156,10 @@ class MainWindow(QMainWindow):
 
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.Fixed)
         header.setSectionResizeMode(2, QHeaderView.Fixed)
-        header.setSectionResizeMode(3, QHeaderView.Fixed)
-        self.table.setColumnWidth(2, 520)
-        self.table.setColumnWidth(3, 220)
+        self.table.setColumnWidth(1, 340)
+        self.table.setColumnWidth(2, 230)
 
         lv.addWidget(self.table, 1)
 
@@ -170,6 +177,8 @@ class MainWindow(QMainWindow):
         self.categoryBox.currentIndexChanged.connect(self._refresh_table)
         self.authorEdit.textChanged.connect(self._refresh_table)
         self.timeBox.currentIndexChanged.connect(self._refresh_table)
+        self.hotkeyFilter.currentIndexChanged.connect(self._refresh_table)
+        self.sortBox.currentIndexChanged.connect(self._refresh_table)
 
         self._apply_styles()
         self._refresh_table()
@@ -285,6 +294,11 @@ class MainWindow(QMainWindow):
                         return False
                 except Exception:
                     return False
+        hk = self.hotkeyFilter.currentText()
+        if hk == "With hotkey" and not row.get("hotkey"):
+            return False
+        if hk == "Without hotkey" and row.get("hotkey"):
+            return False
         q = self.searchEdit.text().strip().lower()
         if q:
             if q in (row.get("name", "") or "").lower():
@@ -294,12 +308,57 @@ class MainWindow(QMainWindow):
             return False
         return True
 
-    def _make_desc_cell(self, row: dict) -> QWidget:
+    def _sort_rows(self, rows: list[dict]) -> list[dict]:
+        sel = self.sortBox.currentText()
+        if sel in ("Newest", "Oldest"):
+            def key(r):
+                try:
+                    return datetime.fromisoformat((r.get("downloaded_at", "") or "").replace("Z", "+00:00"))
+                except Exception:
+                    return datetime.fromtimestamp(0, tz=timezone.utc)
+            return sorted(rows, key=key, reverse=(sel == "Newest"))
+        if sel == "Most actions":
+            return sorted(rows, key=lambda r: (r.get("counts") or {}).get("actions.log", 0), reverse=True)
+        if sel == "Fewest actions":
+            return sorted(rows, key=lambda r: (r.get("counts") or {}).get("actions.log", 0))
+        if sel == "Name A–Z":
+            return sorted(rows, key=lambda r: (r.get("name") or "").lower())
+        if sel == "Name Z–A":
+            return sorted(rows, key=lambda r: (r.get("name") or "").lower(), reverse=True)
+        if sel == "Hotkey first":
+            return sorted(rows, key=lambda r: (0 if r.get("hotkey") else 1, (r.get("name") or "").lower()))
+        return rows
+
+    def _make_macro_cell(self, row: dict) -> QWidget:
+        name = row.get("name") or "Unnamed"
         desc = self._row_desc(row).strip() or "No description"
-        short = (desc[:117].rstrip() + "…") if len(desc) > 120 else desc
-        btn = QPushButton(short); btn.setToolTip("Show details"); btn.setObjectName("descChip"); btn.setFlat(True); btn.setCursor(Qt.PointingHandCursor)
-        btn.clicked.connect(lambda _, r=row: self._show_details(r))
-        wrap = QWidget(); h = QHBoxLayout(wrap); h.setContentsMargins(6, 6, 6, 6); h.setSpacing(0); h.addWidget(btn)
+
+        wrap = QWidget()
+        h = QHBoxLayout(wrap); h.setContentsMargins(10, 8, 10, 8); h.setSpacing(10)
+
+        name_btn = QPushButton(name)
+        name_btn.setObjectName("nameBtn")
+        name_font = QFont(); name_font.setPointSize(16); name_font.setWeight(QFont.DemiBold)
+        name_btn.setFont(name_font)
+        name_btn.setFlat(True)
+        name_btn.setCursor(Qt.PointingHandCursor)
+        name_btn.setToolTip(name)
+        name_btn.clicked.connect(lambda _, r=row: self._show_details(r))
+        h.addWidget(name_btn, 0, Qt.AlignVCenter)
+
+        spacer = QWidget(); spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        h.addWidget(spacer, 1)
+
+        desc_btn = QToolButton()
+        desc_btn.setObjectName("ghostBtn")
+        desc_btn.setText("Description")
+        desc_btn.setMinimumHeight(36)
+        desc_btn.setMinimumWidth(84)
+        desc_btn.setCursor(Qt.PointingHandCursor)
+        desc_btn.setToolTip(desc)
+        desc_btn.clicked.connect(lambda _: self._show_details(row))
+        h.addWidget(desc_btn, 0, Qt.AlignVCenter)
+
         return wrap
 
     def _show_details(self, row: dict):
@@ -309,47 +368,55 @@ class MainWindow(QMainWindow):
 
     def _refresh_table(self):
         rows = [r for r in self._data if self._passes_filters(r)]
+        rows = self._sort_rows(rows)
         self.table.setRowCount(len(rows))
-        name_font = QFont(); name_font.setPointSize(15); name_font.setWeight(QFont.Medium)
 
         for r, row in enumerate(rows):
-            item = QTableWidgetItem(row.get("name") or "Unnamed")
-            item.setFont(name_font)
-            item.setFlags(item.flags() & ~Qt.ItemIsEditable & ~Qt.ItemIsSelectable)
-            self.table.setItem(r, 0, item)
+            self.table.setCellWidget(r, 0, self._make_macro_cell(row))
 
-            self.table.setCellWidget(r, 1, self._make_desc_cell(row))
-
-            btnEdit = QPushButton("Edit")
             btnPlay = QPushButton("Play")
-            btnExport = QPushButton("Export")
-            btnFolder = QPushButton("Open folder")
-            btnDelete = QPushButton("Delete")
-            for b in (btnEdit, btnPlay, btnExport, btnFolder, btnDelete):
-                b.setProperty("cellAction", True)
-                b.setMinimumHeight(36)
-                b.setMinimumWidth(96)
-                b.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-            btnEdit.clicked.connect(lambda _, id=row["id"]: self._open_action_editor(id))
+            btnPlay.setProperty("cellAction", True)
+            btnPlay.setMinimumHeight(36)
+            btnPlay.setMinimumWidth(120)
+            btnPlay.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
             btnPlay.clicked.connect(lambda _, id=row["id"]: self._play_macro(id))
-            btnExport.clicked.connect(lambda _, id=row["id"]: self._export_macro(id))
-            btnFolder.clicked.connect(lambda _, id=row["id"]: self._open_folder(id))
-            btnDelete.clicked.connect(lambda _, id=row["id"]: self._delete_macro(id))
+
+            more = QToolButton()
+            more.setObjectName("moreBtn")
+            more.setText("More")
+            more.setPopupMode(QToolButton.InstantPopup)
+            more.setMinimumHeight(36)
+            more.setMinimumWidth(84)
+            more.setCursor(Qt.PointingHandCursor)
+
+            menu = QMenu(more)
+            actEdit = QAction("Edit", menu); actEdit.triggered.connect(lambda _, id=row["id"]: self._open_action_editor(id))
+            actExport = QAction("Export", menu); actExport.triggered.connect(lambda _, id=row["id"]: self._export_macro(id))
+            actFolder = QAction("Open folder", menu); actFolder.triggered.connect(lambda _, id=row["id"]: self._open_folder(id))
+            menu.addAction(actEdit)
+            menu.addAction(actExport)
+            menu.addAction(actFolder)
+            menu.addSeparator()
+            actDelete = QAction("Delete", menu); actDelete.triggered.connect(lambda _, id=row["id"]: self._delete_macro(id))
+            menu.addAction(actDelete)
+            more.setMenu(menu)
+
             container = QWidget()
             hl = QHBoxLayout(container); hl.setContentsMargins(0, 0, 0, 0); hl.setSpacing(10)
-            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay); hl.addWidget(btnExport); hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addStretch(1)
-            self.table.setCellWidget(r, 2, container)
+            hl.addStretch(1); hl.addWidget(btnPlay); hl.addWidget(more); hl.addStretch(1)
+            self.table.setCellWidget(r, 1, container)
 
             hk_text = self._format_hotkey_display(row.get("hotkey"))
-            hk_btn = QPushButton(hk_text); hk_btn.setMinimumHeight(36)
+            hk_btn = QPushButton(hk_text); hk_btn.setMinimumHeight(32); hk_btn.setMinimumWidth(140)
+            hk_btn.setObjectName("hotkeyPill")
             hk_btn.clicked.connect(lambda _, id=row["id"]: self._set_hotkey_for(id))
             hk_wrap = QWidget(); hk_l = QHBoxLayout(hk_wrap); hk_l.setContentsMargins(0, 0, 0, 0); hk_l.setSpacing(0)
             hk_l.addStretch(1); hk_l.addWidget(hk_btn, 0, Qt.AlignCenter); hk_l.addStretch(1)
-            self.table.setCellWidget(r, 3, hk_wrap)
+            self.table.setCellWidget(r, 2, hk_wrap)
 
-            self.table.setRowHeight(r, 56)
+            self.table.setRowHeight(r, 68)
 
-        self.table.setColumnWidth(2, 520); self.table.setColumnWidth(3, 220)
+        self.table.setColumnWidth(1, 340); self.table.setColumnWidth(2, 230)
         self._sync_hotkeys(rows)
 
     def _ensure_editor_on_path(self) -> Path:
@@ -566,7 +633,7 @@ class MainWindow(QMainWindow):
             return
         try:
             if sys.platform.startswith("win"):
-                os.startfile(str(chosen))  # type: ignore[attr-defined]
+                os.startfile(str(chosen))
             elif sys.platform == "darwin":
                 subprocess.Popen(["open", str(chosen)])
             else:
@@ -575,13 +642,9 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.statusBar().showMessage(f"Could not open folder: {e}", 4000)
 
-    # ------------ Export ------------
-
     def _export_macro(self, macro_id: str):
-        """Export a macro folder as ZIP (non-destructive)."""
         try:
-            # Vorschlag: Name aus meta.json (falls vorhanden), kompakt ohne Spaces
-            suggested_base = self.store.suggest_export_basename(macro_id)  # bereits sanitizt + ohne Leerzeichen
+            suggested_base = self.store.suggest_export_basename(macro_id)
             suggested = str(Path.home() / f"{suggested_base}.zip")
 
             out_path, _ = QFileDialog.getSaveFileName(
@@ -606,13 +669,37 @@ class MainWindow(QMainWindow):
         QLineEdit:hover, QComboBox:hover { border-color:#3a3a3a; }
         QComboBox::drop-down { border:0; }
         QComboBox QAbstractItemView { background:#151515; color:#fff; selection-background-color:#ffbe44; selection-color:#111; }
-        QPushButton { background:#FFB238; color:#111; border:none; border-radius:8px; padding:8px 14px; font-weight:600; }
+
+        QPushButton { background:#FFB238; color:#111; border:none; border-radius:10px; padding:8px 14px; font-weight:600; }
         QPushButton:hover { background:#ffc24d; } QPushButton:pressed { background:#e5a831; }
+
+        #nameBtn { background:transparent; color:#f2f2f2; border:none; padding:0; text-align:left; }
+        #nameBtn:hover { text-decoration: underline; }
+
+        QToolButton#ghostBtn,
+        QToolButton#moreBtn {
+            background:transparent;
+            color:#ffcf73;
+            border:1px solid #2b2b2b;
+            border-radius:10px;
+            padding:0 14px;
+            font-weight:600;
+        }
+        QToolButton#ghostBtn:hover,
+        QToolButton#moreBtn:hover {
+            background:#1d1d1d;
+            border-color:#3a3a3a;
+        }
+
+        QMenu { background:#121212; color:#eaeaea; border:1px solid #2b2b2b; border-radius:10px; padding:6px; }
+        QMenu::item { padding:6px 10px; border-radius:6px; }
+        QMenu::item:selected { background:#1f1a12; color:#ffcf73; }
+
         QTableWidget { background:#0f0f0f; color:#eaeaea; alternate-background-color:#101010; border:1px solid #242424; border-radius:8px; }
-        QHeaderView::section { background:#121212; color:#bfbfbf; border:0; padding:12px; font-weight:600; border-bottom:2px solid #FFB238; }
-        QTableWidget::item:hover { background: rgba(255, 187, 80, 0.16); }
-        QTableWidget::item:selected { background: rgba(255, 187, 80, 0.26); color:#fff; }
-        #descChip { background: rgba(255, 187, 80, 0.13); color:#ffcf73; border:1px solid rgba(255, 187, 80, 0.35);
-                    border-radius:10px; padding:8px 10px; font-weight:600; text-align:left; }
-        #descChip:hover { background: rgba(255, 187, 80, 0.2); }
+        QHeaderView::section { background:#121212; color:#bfbfbf; border:0; padding:12px; font-weight:700; border-bottom:2px solid #FFB238; }
+
+        #hotkeyPill { background:#FFB238; color:#111; border:none; border-radius:999px; padding:6px 12px; font-weight:700; }
+
+        QTableWidget::item:hover { background: rgba(255, 187, 80, 0.10); }
+        QTableWidget::item:selected { background: rgba(255, 187, 80, 0.22); color:#fff; }
         """)

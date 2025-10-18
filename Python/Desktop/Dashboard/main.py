@@ -11,7 +11,7 @@ def main():
 
     app.setStyle("Fusion")
 
-    # Nicht beenden, wenn letztes Fenster geschlossen/minimiert wird
+
     app.setQuitOnLastWindowClosed(False)
 
     # Ctrl+C im Terminal erlauben (bes. unter Windows braucht es einen Timer-Tick)
