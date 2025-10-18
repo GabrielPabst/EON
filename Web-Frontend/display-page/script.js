@@ -167,7 +167,7 @@ function populateStats() {
                         </svg>
                         <div class="progress-value">
                             <div class="progress-value-number">${card.value}</div>
-                            <div class="progress-value-label">Accuracy</div>
+                            <div class="progress-value-label">Satisfaction</div>
                         </div>
                     </div>
                 </div>

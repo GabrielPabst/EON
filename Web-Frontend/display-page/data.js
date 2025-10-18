@@ -4,23 +4,23 @@
 const websiteData = {
     // BASIC SETTINGS - Change these first
     meta: {
-        title: "Your App Name - Description",
-        description: "Your app description here"
+        title: "EON",
+        description: "The Eyes of Automation",
     },
 
     // TOP BAR - The promotional banner at the top
     topBar: {
-        text: "🎉 New Feature Launch - Try it now!",
+        text: "🎉 New Desktop App - Try it now!",
         link: "#features"
     },
 
     // NAVIGATION - Main menu items
     navigation: {
-        logo: "YourApp", // Your brand name
+        logo: "EON", // Your brand name
         links: [
             { text: "Features", href: "#features" },
-            { text: "Pricing", href: "#pricing" },
-            { text: "About", href: "#about" },
+            { text: "Marketplace", href: "#pricing" },
+            { text: "Download", href: "#about" },
             { text: "Contact", href: "#contact" }
         ]
     },
@@ -28,8 +28,8 @@ const websiteData = {
     // HERO SECTION - Main landing area
     hero: {
         title: "EON",
-        subtitle: "Your Catchy Tagline",
-        description: "A compelling description of what your app does and why people should care. Keep it concise but impactful.",
+        subtitle: "The Eyes of Automation",
+        description: "Revolutionize your workflow with cutting-edge vision automation tools designed for efficiency and productivity.",
         buttons: [
             {
                 text: "Get Started",
@@ -58,34 +58,34 @@ const websiteData = {
         title: "Why Choose Us",
         items: [
             {
+                icon: "fas fa-eye",
+                title: "Inovative Vision Technology",
+                description: "Give your automation the power of sight with our advanced computer vision features."
+            },
+            {
                 icon: "fas fa-rocket",
                 title: "Fast & Reliable",
-                description: "Lightning-fast performance with 99.9% uptime guarantee."
+                description: "Download and deploy makros in seconds using our optimized platform."
             },
             {
                 icon: "fas fa-shield-alt",
                 title: "Secure",
-                description: "Enterprise-grade security to protect your data."
+                description: "Full overview over all tasks executed on your machine."
             },
             {
                 icon: "fas fa-users",
                 title: "Collaborative",
-                description: "Work together with your team in real-time."
-            },
-            {
-                icon: "fas fa-mobile-alt",
-                title: "Mobile Ready",
-                description: "Access from anywhere on any device."
+                description: "Share makros and workflows with our growing community."
             },
             {
                 icon: "fas fa-chart-line",
                 title: "Analytics",
-                description: "Detailed insights and reporting dashboard."
+                description: "Detailed insights and reporting on makros in our dashboard."
             },
             {
                 icon: "fas fa-headset",
-                title: "24/7 Support",
-                description: "Round-the-clock customer support when you need it."
+                title: "Support",
+                description: "Write us on Discord, via email or github and we will help you out."
             }
         ]
     },
@@ -103,17 +103,28 @@ const websiteData = {
             {
                 number: 2,
                 title: "Setup",
-                description: "Configure your preferences and connect your tools."
+                description: "Download our app and configure preferences."
             },
             {
                 number: 3,
                 title: "Launch",
                 description: "Start using all the powerful features immediately."
             },
+            ,
             {
-                number: 4,
+                number: 5,
+                title: "Build",
+                description: "Record and create your own makros using our visual editor."
+            },
+            {
+                number: 6,
                 title: "Grow",
-                description: "Scale up as your needs grow with our flexible plans."
+                description: "Scale up your automation using community makros."
+            },
+            {
+                number: 7,
+                title: "Publish",
+                description: "Upload your own makros to share with the community and use everywhere."
             }
         ]
     },
@@ -122,7 +133,7 @@ const websiteData = {
     stats: {
         title: "Our Impact",
         cards: [
-            {
+            /*{
                 title: "Happy Users",
                 icon: "fas fa-users",
                 type: "chart",
@@ -137,16 +148,16 @@ const websiteData = {
                         15200, 18900, 23400, 28100, 33800, 40200, 47500
                     ]
                 }
-            },
+            },*/
             {
                 title: "System Uptime",
                 icon: "fas fa-server",
                 type: "chart",
                 chartType: "wave",
-                value: "99.9%",
-                change: "Last 30 days",
+                value: "90.9%",
+                change: "Last 2 days",
                 changeType: "neutral"
-            },
+            }, 
             {
                 title: "Customer Satisfaction",
                 icon: "fas fa-smile",
@@ -160,10 +171,10 @@ const websiteData = {
                 icon: "fas fa-chart-bar",
                 type: "bars",
                 bars: [
-                    { label: "New Signups: 12K", value: 80 },
-                    { label: "Active Users: 45K", value: 90 },
-                    { label: "Retention Rate: 85%", value: 85 },
-                    { label: "Referrals: 3.2K", value: 65 }
+                    { label: "Makros Uploaded: 10", value: 90 },
+                    { label: "Automations Executed: 200", value: 80 },
+                    { label: "Account Signups: 15", value: 70 },
+                    { label: "Images Recogniced: 600", value: 90 }
                 ]
             }
         ]
@@ -213,10 +224,3 @@ const websiteData = {
     }
 };
 
-// CUSTOMIZATION TIPS:
-// 1. Change the color scheme by updating CSS variables in styles.css
-// 2. Add more chart types in the stats section
-// 3. Modify icons using Font Awesome classes
-// 4. Update chart data arrays to reflect your real metrics
-// 5. Add more steps to the user guide as needed
-// 6. Customize floating icons and their positions
