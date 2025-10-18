@@ -7,16 +7,15 @@ import subprocess
 import os
 from typing import Optional
 
-from PySide6.QtCore import Qt, QFileSystemWatcher, QTimer, QObject, Signal, Slot, QSize
-from PySide6.QtGui import QFont, QAction, QIcon
+from PySide6.QtCore import Qt, QFileSystemWatcher, QTimer, QObject, Signal, Slot
+from PySide6.QtGui import QFont, QAction, QIcon, QPixmap, QPainter, QColor
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox, QLabel,
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QStatusBar, QSplitter,
     QSizePolicy, QApplication, QSystemTrayIcon, QMenu, QInputDialog, QDialog,
     QTextEdit, QDialogButtonBox, QStyle, QMessageBox, QFileDialog, QToolButton
 )
-from PySide6.QtGui import QPixmap, QPainter
-from PySide6.QtGui import QIcon, QPalette, QColor
+
 from .widgets.side_nav import SideNav
 from .dialogs.import_overlay import ImportOverlay
 from .dialogs.record_window import RecordWindow
@@ -121,6 +120,7 @@ class MainWindow(QMainWindow):
         def field(lbl: str, w: QWidget) -> QWidget:
             wrap = QWidget(); v = QVBoxLayout(wrap); v.setContentsMargins(0, 0, 0, 0); v.setSpacing(4)
             l = QLabel(lbl); l.setObjectName("fieldLabel"); v.addWidget(l); v.addWidget(w); return wrap
+
         self.categoryBox = QComboBox(); self.categoryBox.addItems(["All", "Office", "Audio", "Video", "Utilities"]); self.categoryBox.setMinimumWidth(160)
         self.authorEdit = QLineEdit(); self.authorEdit.setPlaceholderText("Author…"); self.authorEdit.setMinimumWidth(180)
         self.timeBox = QComboBox(); self.timeBox.addItems(["All", "Today", "Last 7 days", "Last month", "Last 3 months"]); self.timeBox.setMinimumWidth(190)
@@ -159,9 +159,10 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.Fixed)
         header.setSectionResizeMode(2, QHeaderView.Fixed)
-        self.table.setColumnWidth(1, 340)
-        self.table.setColumnWidth(2, 230)
-        self.table.setColumnWidth(3, 140)
+        header.setSectionResizeMode(3, QHeaderView.Fixed)
+        self.table.setColumnWidth(1, 220)
+        self.table.setColumnWidth(2, 260)
+        self.table.setColumnWidth(3, 200)
 
         lv.addWidget(self.table, 1)
 
@@ -344,7 +345,7 @@ class MainWindow(QMainWindow):
         name_btn.setFont(name_font)
         name_btn.setFlat(True)
         name_btn.setCursor(Qt.PointingHandCursor)
-        name_btn.setToolTip(name)
+        name_btn.setToolTip(desc if desc else name)
         name_btn.clicked.connect(lambda _, r=row: self._show_details(r))
         h.addWidget(name_btn, 0, Qt.AlignVCenter)
 
@@ -363,17 +364,23 @@ class MainWindow(QMainWindow):
 
         return wrap
 
-    def _make_desc_cell(self, row: dict) -> QWidget:
-        desc = self._row_desc(row).strip() or "No description"
-        wrap = QWidget()
-        layout = QHBoxLayout(wrap)
-        layout.setContentsMargins(10, 8, 10, 8)
-        layout.setSpacing(10)
-        desc_label = QLabel(desc)
-        desc_label.setWordWrap(True)
-        desc_label.setObjectName("descLabel")
-        layout.addWidget(desc_label, 1)
-        return wrap
+    def _safe_theme_icon(self, fallback_style_icon: QStyle.StandardPixmap, theme_name: str | None = None) -> QIcon:
+        if theme_name:
+            ico = QIcon.fromTheme(theme_name)
+            if not ico.isNull():
+                return ico
+        return self.style().standardIcon(fallback_style_icon)
+
+    def _icon_button(self, icon: QIcon, text_fallback: str) -> QPushButton:
+        btn = QPushButton()
+        btn.setMinimumHeight(36)
+        btn.setMinimumWidth(42)
+        if not icon.isNull():
+            btn.setIcon(icon)
+        else:
+            btn.setText(text_fallback)
+        btn.setProperty("cellAction", True)
+        return btn
 
     def _show_details(self, row: dict):
         dlg = MacroDetailsDialog(row, self)
@@ -385,68 +392,52 @@ class MainWindow(QMainWindow):
         rows = self._sort_rows(rows)
         self.table.setRowCount(len(rows))
 
-        # Define name_font here
-        name_font = QFont()
-        name_font.setPointSize(16)
-        name_font.setWeight(QFont.DemiBold)
+        name_font = QFont(); name_font.setPointSize(15); name_font.setWeight(QFont.Medium)
 
         for r, row in enumerate(rows):
             item = QTableWidgetItem(row.get("name") or "Unnamed")
             item.setFont(name_font)
             item.setFlags(item.flags() & ~Qt.ItemIsEditable & ~Qt.ItemIsSelectable)
-            self.table.setItem(r, 0, item)  
-            self.table.setCellWidget(r, 1, self._make_desc_cell(row))
-            
-           
+            self.table.setItem(r, 0, item)
 
-            def colorize_icon(icon: QIcon, color: QColor) -> QIcon:
-                pixmap = icon.pixmap(64, 64)
-                painter = QPainter(pixmap)
-                painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-                painter.fillRect(pixmap.rect(), color)
-                painter.end()
-                return QIcon(pixmap)
-            
-            btnEdit = QPushButton()
-            btnEdit.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.DocumentProperties))
-            btnPlay = QPushButton()
-            btnPlay.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.MediaPlaybackStart))
-            btnExport = QPushButton()
-            btnExport.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.DocumentSaveAs))
-            btnFolder = QPushButton()
-            btnFolder.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.FolderOpen))
-            btnDelete = QPushButton()
-            btnDelete.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.EditDelete))
+            play_btn = QPushButton("Play")
+            play_btn.setMinimumHeight(36)
+            play_btn.setMinimumWidth(110)
+            play_btn.setProperty("cellAction", True)
+            play_btn.clicked.connect(lambda _, id=row["id"]: self._play_macro(id))
+            act_wrap = QWidget(); act_h = QHBoxLayout(act_wrap); act_h.setContentsMargins(0, 0, 0, 0); act_h.addStretch(1); act_h.addWidget(play_btn); act_h.addStretch(1)
+            self.table.setCellWidget(r, 1, act_wrap)
 
-            for b in (btnEdit, btnPlay, btnExport, btnFolder, btnDelete):
-                b.setProperty("cellAction", True)
-            hl = QHBoxLayout(container); hl.setContentsMargins(0, 0, 0, 0); hl.setSpacing(10)
-            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay);  hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addWidget(btnExport); hl.addStretch(1)
-            self.table.setCellWidget(r, 2, container)
-                b.setIcon(colorize_icon(b.icon(), QColor("black")))
-                
-            btnEdit.setMinimumWidth(42); btnPlay.setMinimumWidth(42); btnFolder.setMinimumWidth(42); btnDelete.setMinimumWidth(42)
+            edit_icon   = self._safe_theme_icon(QStyle.SP_FileDialogDetailedView, "document-properties")
+            export_icon = self._safe_theme_icon(QStyle.SP_DriveFDIcon, "document-save-as")
+            folder_icon = self._safe_theme_icon(QStyle.SP_DirOpenIcon, "folder-open")
+            delete_icon = self._safe_theme_icon(QStyle.SP_TrashIcon, "edit-delete")
+
+            btnEdit   = self._icon_button(edit_icon,   "Edit")
+            btnExport = self._icon_button(export_icon, "Export")
+            btnFolder = self._icon_button(folder_icon, "Folder")
+            btnDelete = self._icon_button(delete_icon, "Delete")
+
             btnEdit.clicked.connect(lambda _, id=row["id"]: self._open_action_editor(id))
-            btnPlay.clicked.connect(lambda _, id=row["id"]: self._play_macro(id))
+            btnExport.clicked.connect(lambda _, id=row["id"]: self._export_macro(id))
             btnFolder.clicked.connect(lambda _, id=row["id"]: self._open_folder(id))
             btnDelete.clicked.connect(lambda _, id=row["id"]: self._delete_macro(id))
-            btnExport.clicked.connect(lambda _, id=row["id"]: self._export_macro(id))
-            container = QWidget()
-            hl = QHBoxLayout(container); hl.setContentsMargins(0, 0, 0, 0); hl.setSpacing(10)
-            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnPlay);  hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addWidget(btnExport);hl.addStretch(1)
-            self.table.setCellWidget(r, 2, container)
+
+            actions_container = QWidget()
+            hl = QHBoxLayout(actions_container); hl.setContentsMargins(0, 0, 0, 0); hl.setSpacing(10)
+            hl.addStretch(1); hl.addWidget(btnEdit); hl.addWidget(btnExport); hl.addWidget(btnFolder); hl.addWidget(btnDelete); hl.addStretch(1)
+            self.table.setCellWidget(r, 2, actions_container)
 
             hk_text = self._format_hotkey_display(row.get("hotkey"))
             hk_btn = QPushButton(hk_text); hk_btn.setMinimumHeight(32); hk_btn.setMinimumWidth(140)
             hk_btn.setObjectName("hotkeyPill")
             hk_btn.clicked.connect(lambda _, id=row["id"]: self._set_hotkey_for(id))
-            hk_wrap = QWidget(); hk_l = QHBoxLayout(hk_wrap); hk_l.setContentsMargins(0, 0, 0, 0); hk_l.setSpacing(0)
+            hk_wrap = QWidget(); hk_l = QHBoxLayout(hk_wrap); hk_l.setContentsMargins(0, 0, 0, 0)
             hk_l.addStretch(1); hk_l.addWidget(hk_btn, 0, Qt.AlignCenter); hk_l.addStretch(1)
             self.table.setCellWidget(r, 3, hk_wrap)
 
             self.table.setRowHeight(r, 68)
 
-        self.table.setColumnWidth(1, 340); self.table.setColumnWidth(2, 230); self.table.setColumnWidth(3, 140)
         self._sync_hotkeys(rows)
 
     def _ensure_editor_on_path(self) -> Path:
