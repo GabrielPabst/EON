@@ -26,7 +26,7 @@
 
 ---
 
-### **3. Markt- und Marketinganalyse (Gabriel) **
+### 3. Markt- und Marketinganalyse (Gabriel)
 
 3.1 Marktüberblick und Trends im Bereich Bilderkennung und KI  
 3.2 Zielmarkt und relevante Branchen  
