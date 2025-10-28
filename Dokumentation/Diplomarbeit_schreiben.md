@@ -1,6 +1,6 @@
 Inhaltsverzeichnis
 
-1. Produktion, Problemstellung, Analyse des Marktes, Ziele
+1. Produktion, Problemstellung, Analyse des Marktes, Ziele, Marketing
 
 2. Theorie, Bilderkennung, Programmiersprachen, Algorithmen
 
@@ -13,13 +13,9 @@ Inhaltsverzeichnis
 
 6. Schluss, Quellen, Zitate
 
-
-
 Fakten: 
 40-50 Seiten pro Person
 Deadline im April(7.4.) also Abgabe Datum
 9.4. Project Award 
 27.5. Präsentation d. Diplomarbeiten
 Semesterferien sollte es fertig sein
-
-

@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EON - Pitch Deck</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #ff7700;
+            --secondary-color: #ff9900;
+            --bg-dark: #000;
+            --text-light: #fff;
+        }
+
+        .reveal {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #000;
+        }
+
+        .reveal .slides {
+            text-align: left;
+        }
+
+        .reveal h1, .reveal h2, .reveal h3 {
+            text-transform: none;
+            font-weight: 900;
+            letter-spacing: -2px;
+        }
+
+        .reveal h1 {
+            font-size: 4.5rem;
+            background: linear-gradient(135deg, #fff 0%, var(--primary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .reveal h2 {
+            color: var(--primary-color);
+            font-size: 2.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .reveal h3 {
+            color: #fff;
+            font-size: 1.8rem;
+        }
+
+        .reveal p {
+            color: #ccc;
+            line-height: 1.8;
+            font-size: 1.2rem;
+        }
+
+        .reveal section {
+            background: radial-gradient(ellipse at center, rgba(255, 119, 0, 0.1) 0%, rgba(0, 0, 0, 1) 70%);
+        }
+        .reveal ul{
+            list-style-type: none;
+        }
+
+        /* Title Slide */
+        .title-slide {
+            text-align: center !important;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            color: #ccc;
+            font-weight: 300;
+            margin-bottom: 2rem;
+        }
+
+        .tagline {
+            font-size: 1.3rem;
+            color: #999;
+            padding: 0 8rem;
+        }
+
+        /* Card Styles */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 0.7fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: linear-gradient(135deg, rgba(255, 119, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
+            border: 1px solid rgba(255, 119, 0, 0.2);
+            border-radius: 20px;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(255, 119, 0, 0.5);
+            box-shadow: 0 20px 40px rgba(255, 119, 0, 0.2);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        /* Stats */
+        .stat-row {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 3rem;
+            gap: 2rem;
+        }
+
+        .stat {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: block;
+        }
+
+        .stat-label {
+            color: #ccc;
+            font-size: 1.2rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Team Grid */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .team-member {
+            text-align: center;
+        }
+
+        .team-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #000;
+            border: 3px solid rgba(255, 119, 0, 0.3);
+        }
+
+        .team-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 0.3rem;
+        }
+
+        .team-role {
+            font-size: 1rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .team-bio {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 3rem;
+            margin-top: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .timeline-item {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -3.5rem;
+            top: 0.5rem;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            border: 3px solid #000;
+        }
+
+        .timeline-date {
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .timeline-content h3 {
+            font-size: 1.3rem;
+            margin: 0.5rem 0;
+        }
+
+        .timeline-content p {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        /* Feature List */
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(255, 119, 0, 0.05) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border-left: 4px solid var(--primary-color);
+            border-radius: 10px;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            min-width: 50px;
+        }
+
+        .feature-content h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-content p {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        /* Pricing Table */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .pricing-card {
+            background: linear-gradient(135deg, rgba(255, 119, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
+            border: 2px solid rgba(255, 119, 0, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(255, 119, 0, 0.3);
+        }
+
+        .pricing-name {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .pricing-price {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-period {
+            color: #999;
+            margin-bottom: 2rem;
+        }
+
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .pricing-features li {
+            padding: 0.5rem 0;
+            color: #ccc;
+            font-size: 1rem;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            text-align: center !important;
+            padding: 4rem 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 3rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: #000;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255, 119, 0, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 119, 0, 0.5);
+        }
+
+        /* Contact Section */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .contact-item {
+            text-align: center;
+        }
+
+        .contact-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .contact-label {
+            color: #999;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .contact-value {
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* Floating particles */
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        /* Highlight text */
+        .highlight {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        /* Two column layout */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .column-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Custom list */
+        .custom-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .custom-list li {
+            padding: 0.8rem 0;
+            color: #ccc;
+            font-size: 1.1rem;
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .custom-list li::before {
+            content: '▸';
+            color: var(--primary-color);
+            position: absolute;
+            left: 0;
+            font-size: 1.5rem;
+        }
+
+        /* Progress bars */
+        .progress-item {
+            margin: 1.5rem 0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(255, 119, 0, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+            transition: width 1s ease;
+        }
+
+        /* Chart placeholder */
+        .chart-container {
+            background: rgba(255, 119, 0, 0.05);
+            border: 1px solid rgba(255, 119, 0, 0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        /* Quote */
+        .quote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 2rem;
+            font-style: italic;
+            color: #ccc;
+            font-size: 1.3rem;
+            margin: 2rem 0;
+        }
+
+        .quote-author {
+            color: var(--primary-color);
+            font-style: normal;
+            font-weight: bold;
+            margin-top: 1rem;
+            display: block;
+        }
+
+        /* Logo grid */
+        .logo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+            align-items: center;
+        }
+
+        .logo-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 119, 0, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .logo-item:hover {
+            border-color: var(--primary-color);
+            transform: scale(1.05);
+        }
+        ul {
+             
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            
+            <!-- Slide 1: Title -->
+            <section class="title-slide">
+                <div class="particles" id="particles"></div>
+                <h1 class="animate-title">EON</h1>
+                <div class="subtitle">Python Marketplace Revolution</div>
+                <p class="tagline">The ultimate desktop and web-based marketplace tool with advanced macro capabilities and cutting-edge image recognition</p>
+            </section>
+
+            <!-- Slide 2: The Problem -->
+            <section>
+                <h2>The Problem</h2>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <div class="feature-icon">⏱️</div>
+                        <div class="feature-content">
+                            <h3>Time-Consuming Repetitive Tasks</h3>
+                            <p>Businesses waste 40% of their time on manual, repetitive workflows</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">😒</div>
+                        <div class="feature-content">
+                            <h3>Record Once Breaks Everywhere</h3>
+                            <p>Modern Makros break when it comes to diffrent resolutions or loading times</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🔧</div>
+                        <div class="feature-content">
+                            <h3>Technical Barriers</h3>
+                            <p>Existing solutions require coding expertise, lengthy implementation and break over time</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 3: The Solution -->
+            <section>
+                <h2>Our Solution</h2>
+                <div class="two-column">
+                    <div class="column-content">
+                        <h3>EON makes automation accessible to everyone</h3>
+                        <ul style="" class="custom-list">
+                            <li>No-code interface with Python power</li>
+                            <li>Pre-built marketplace templates</li>
+                            <li>Advanced image recognition</li>
+                            <li>Real time & context based</li>
+                            <li>Hightly customizable</li>
+                        </ul>
+                    </div>
+                    <div class="chart-container">
+                        <i class="fas fa-robot" style="font-size: 8rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide: Program Structure -->
+            
+            <!-- Slide 4: Market Opportunity 
+            <section>
+                <h2>Market Opportunity</h2>
+                <div class="stat-row">
+                    <div class="stat">
+                        <span class="stat-number">$8.5B</span>
+                        <div class="stat-label">RPA Market Size 2024</div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">23%</span>
+                        <div class="stat-label">Annual Growth Rate</div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">60M+</span>
+                        <div class="stat-label">Target SMBs Globally</div>
+                    </div>
+                </div>
+                <div class="quote" style="margin-top: 3rem;">
+                    "By 2025, 70% of organizations will implement structured automation to deliver flexibility and efficiency"
+                    <span class="quote-author">— Gartner Research</span>
+                </div>
+            </section>-->
+
+            <!-- Slide 5: Product Features -->
+            <section>
+                <h2>Key Features</h2>
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-mouse-pointer"></i></div>
+                        <h3>Advanced Macros</h3>
+                        <p>Record and replay complex workflows with pixel-perfect precision</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-eye"></i></div>
+                        <h3>Image Recognition</h3>
+                        <p>AI-powered visual element detection for reliable automation</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-store"></i></div>
+                        <h3>Marketplace</h3>
+                        <p>Browse and deploy pre-built automation scripts instantly</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-code"></i></div>
+                        <h3>Python Powered</h3>
+                        <p>Full Python scripting for advanced customization</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Program Structure</h2>
+                <div class="two-column">
+                    <div class="card" style="height: 100%;">
+                        <div class="card-icon"><i class="fas fa-desktop"></i></div>
+                        <h3>Desktop Application</h3>
+                        <ul class="custom-list">
+                            <li>Dashboard for managing all your macros</li>
+                            <li>Built-in macro editor with advanced features</li>
+                            <li>Recording studio for creating new macros</li>
+                            <li>Integrated marketplace access</li>
+                            <li>Real-time macro execution</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="height: 100%;">
+                        <div class="card-icon"><i class="fas fa-shopping-cart"></i></div>
+                        <h3>Web Marketplace</h3>
+                        <ul class="custom-list">
+                            <li>Browse community-created macros</li>
+                            <li>Upload and share your own macros</li>
+                            <li>Rating and review system</li>
+                            <li>Category-based organization</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 6: How It Works -->
+            <section>
+                <h2>How It Works</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">Step 1</div>
+                        <div class="timeline-content">
+                            <h3>Get your Makros</h3>
+                            <p>Choose from hundreds of pre-built automation templates or start from scratch</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Step 2</div>
+                        <div class="timeline-content">
+                            <h3>Customize Workflow</h3>
+                            <p>Use our intuitive interface to adjust settings and parameters to your needs</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Step 3</div>
+                        <div class="timeline-content">
+                            <h3>Setup Automation</h3>
+                            <p>Bind your Makro to the hotkey of your need</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Step 4</div>
+                        <div class="timeline-content">
+                            <h3>Execute</h3>
+                            <p>Use your automations everywhere and share them with other users</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 7: Traction & Metrics 
+            <section>
+                <h2>Traction & Growth</h2>
+                <div class="two-column">
+                    <div>
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>Active Users</span>
+                                <span class="highlight">12,500</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>Monthly Revenue</span>
+                                <span class="highlight">$48K MRR</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 70%"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>Marketplace Scripts</span>
+                                <span class="highlight">850+</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 95%"></div>
+                            </div>
+                        </div>
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>Customer Satisfaction</span>
+                                <span class="highlight">4.8/5.0</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 96%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Key Highlights</h3>
+                            <ul class="custom-list">
+                                <li>40% MoM user growth</li>
+                                <li>65% conversion rate</li>
+                                <li>$380 average LTV</li>
+                                <li>Featured on Product Hunt</li>
+                                <li>Partnership with 3 major SaaS platforms</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            -->
+            <!-- Slide 8: Business Model -->
+            <section>
+                <h2>Revenue Model (only temporary)</h2>
+                <div class="pricing-grid">
+                    <div class="pricing-card">
+                        <div class="pricing-name">Starter-License</div>
+                        <div class="pricing-price">FREE</div>
+                        <div class="pricing-period">‎ </div>
+                        <ul class="pricing-features">
+                            <li>Unlimited Makros</li>
+                            <li>No Context Mode</li>
+                            <li>No Editor Mode</li>
+                            <li>Limited Marketplace Accessability</li>
+                        </ul>
+                    </div>
+                    <div class="pricing-card featured">
+                        <div class="pricing-name">Professional-License</div>
+                        <div class="pricing-price">$?</div>
+                        <div class="pricing-period">per month</div>
+                        <ul class="pricing-features">
+                            <li>Unlimited Makros</li>
+                            <li>Limited Context Mode</li>
+                            <li>Full Editor Mode</li>
+                            <li>Full Marketplace Accessability</li>
+                        </ul>
+                    </div>
+                    <div class="pricing-card">
+                        <div class="pricing-name">Enterprise-License</div>
+                        <div class="pricing-price">$?</div>
+                        <div class="pricing-period">per month</div>
+                        <ul class="pricing-features">
+                            <li>Everything in Pro</li>
+                            <li>Unlimited COntext Mode</li>
+                            <li>Dedicated account manager</li>
+                            <li>Customer Support</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 10: Roadmap -->
+            <section>
+                <h2>Product Roadmap (only temporary)</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">November 2025</div>
+                        <div class="timeline-content">
+                            <h3>Starter Licence Features</h3>
+                            <p>All Starter Features finished</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Start of 2026</div>
+                        <div class="timeline-content">
+                            <h3>Full finised Diplomarbeit</h3>
+                            <p>Including professional documentation and final presentation</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">End of 2026</div>
+                        <div class="timeline-content">
+                            <h3>Professional Licence Features</h3>
+                            <p>Full context mode and custom scripting</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2028</div>
+                        <div class="timeline-content">
+                            <h3>Company Launch</h3>
+                            <p>Launching as a startup and getting first customers</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 11: Team -->
+            <section>
+                <h2>Meet the Team</h2>
+                <div class="team-grid">
+                    <div class="team-member">
+                        <div class="team-avatar">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="team-name">Gabriel Pabst</div>
+                        <div class="team-role">Co-Founder</div>
+                        <p class="team-bio">HTL Leonding Medientechnik</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="team-avatar">
+                            <i class="fas fa-user-cog"></i>
+                        </div>
+                        <div class="team-name">Felix Kohlboek</div>
+                        <div class="team-role">Co-Founder</div>
+                        <p class="team-bio">HTL Leonding Informatik</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 12: Advisors & Investors -->
+            <section>
+                <h2>Advisors & Partners</h2>
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-hands-helping"></i></div>
+                        <h3>Strategic Advisors</h3>
+                        <ul class="custom-list">
+                            <li>Herr Prof. Alexander Kornfellner</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-handshake"></i></div>
+                        <h3>Technology Partners</h3>
+                        <ul class="custom-list">
+                            <li>HTL Leonding</li>
+                        </ul>
+                    </div>
+                </div>
+                <h3 style="margin-top: 3rem; color: var(--primary-color);">Trusted By</h3>
+                <div class="logo-grid">
+                    <div class="logo-item">Company A</div>
+                </div>
+            </section>
+
+            <!-- Slide 13: Customer Success Stories 
+            <section>
+                <h2>Customer Success</h2>
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-quote-left"></i></div>
+                        <p style="font-style: italic; margin-bottom: 1rem;">"EON reduced our manual data entry by 90%. We saved 20 hours per week and reallocated our team to high-value work."</p>
+                        <div style="color: var(--primary-color); font-weight: bold; font-size: 2rem;">— Marketing Agency, 50 employees</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-quote-left"></i></div>
+                        <p style="font-style: italic; margin-bottom: 1rem;">"The ROI was immediate. Within the first month, we automated 15 workflows and cut operational costs by $5K monthly."</p>
+                        <div style="color: var(--primary-color); font-weight: bold;font-size: 2rem;">— E-commerce Business, 200 employees</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-quote-left"></i></div>
+                        <p style="font-style: italic; margin-bottom: 1rem;">"No-code automation that actually works. Our non-technical staff created powerful workflows in minutes."</p>
+                        <div style="color: var(--primary-color); font-weight: bold;font-size: 2rem;">— Financial Services, 1000+ employees</div>
+                    </div>
+                </div>
+            </section>-->
+
+            <!-- Slide 14: Financial Projections 
+            <section>
+                <h2>Financial Projections</h2>
+                <div class="two-column">
+                    <div>
+                        <h3 style="margin-bottom: 2rem;">3-Year Forecast</h3>
+                        <div class="stat" style="margin-bottom: 2rem;">
+                            <span class="stat-number">$2.4M</span>
+                            <div class="stat-label">ARR by End of Year 2</div>
+                        </div>
+                        <div class="stat" style="margin-bottom: 2rem;">
+                            <span class="stat-number">$8.5M</span>
+                            <div class="stat-label">ARR by End of Year 3</div>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">35%</span>
+                            <div class="stat-label">Target Gross Margin</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div style="text-align: center;">
+                            <i class="fas fa-chart-line" style="font-size: 6rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+                            <p>Revenue Growth Trajectory</p>
+                        </div>
+                    </div>
+                </div>
+            </section>-->
+            <!-- Slide 15: Why Now? 
+            <section>
+                <h2>Why Now?</h2>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <div class="feature-icon">📈</div>
+                        <div class="feature-content">
+                            <h3>Market Timing is Perfect</h3>
+                            <p>Remote work acceleration has created unprecedented demand for automation tools. Companies are actively seeking cost-effective solutions.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🤖</div>
+                        <div class="feature-content">
+                            <h3>AI Technology Maturity</h3>
+                            <p>Recent advances in computer vision and ML make our image recognition capabilities possible and affordable.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">💡</div>
+                        <div class="feature-content">
+                            <h3>SMB Digital Transformation</h3>
+                            <p>Small businesses are finally ready to adopt automation, creating a massive underserved market segment.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            Slide 18: Risk Mitigation 
+            <section>
+                <h2>Risk & Mitigation</h2>
+                <div class="two-column">
+                    <div>
+                        <h3 style="color: #ff6b6b; margin-bottom: 1rem;">Key Risks</h3>
+                        <ul class="custom-list">
+                            <li>Competition from incumbents</li>
+                            <li>Platform dependency</li>
+                            <li>Technical complexity</li>
+                            <li>Market education needed</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 style="color: #98d982; margin-bottom: 1rem;">Our Strategy</h3>
+                        <ul class="custom-list">
+                            <li>Strong differentiation & pricing</li>
+                            <li>Multi-platform support</li>
+                            <li>Intuitive UX & templates</li>
+                            <li>Content marketing & community</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        -->
+            <!-- Slide 19: Vision -->
+            <section>
+                <h2>Our Vision</h2>
+                <div class="quote">
+                    "To empower every worker on a computer to focus on what matters most - innovation and growth, not repetitive tasks."
+                </div>
+                <div class="stat-row" style="margin-top: 4rem;">
+                    <div class="stat">
+                        <span class="stat-number">1000+</span>
+                        <div class="stat-label">Active Users by 2029</div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">#1</span>
+                        <div class="stat-label">Platform for Makros</div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">5M+</span>
+                        <div class="stat-label">Hours Saved Annually</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 20: Contact & CTA -->
+            <section class="cta-section">
+                <h2>Let's Build the Future Together</h2>
+                <p style="font-size: 1.3rem; max-width: 700px; margin: 2rem auto; color: #ccc;">
+                    Join us in revolutionizing how businesses automate their workflows.
+                </p>
+                <div class="contact-grid" style="margin: 3rem 0;">
+                    <div class="contact-item">
+                        <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+                        <div class="contact-label">Email</div>
+                        <div class="contact-value">gabriel.pabst36@gmail.com</div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon"><i class="fas fa-globe"></i></div>
+                        <div class="contact-label">Website</div>
+                        <div class="contact-value">_</div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-icon"><i class="fas fa-calendar"></i></div>
+                        <div class="contact-label">Schedule</div>
+                        <div class="contact-value">Book a Demo</div>
+                    </div>
+                </div>
+                <a style="text-decoration: none; color: black;" href="#" class="btn">Schedule Your Demo</a>
+            </section>
+
+            <!-- Slide 21: Thank You -->
+            <section class="title-slide">
+                <div class="particles" id="particles2"></div>
+                <h1 style="font-size: 5rem;">Thank You</h1>
+                <p class="tagline" style="font-size: 1.5rem;">Questions?</p>
+                <div style="margin-top: 3rem;">
+                    <p style="color: var(--primary-color); font-size: 1.3rem; font-weight: bold;">Let's automate the future</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        // Initialize Reveal.js
+        Reveal.initialize({
+            hash: true,
+            transition: 'slide',
+            transitionSpeed: 'default',
+            backgroundTransition: 'fade',
+            controls: true,
+            progress: true,
+            center: true,
+            slideNumber: true,
+            autoPlayMedia: true
+        });
+
+        // Create floating particles
+        function createParticles(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 4 + 2 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.opacity = Math.random() * 0.3 + 0.1;
+                container.appendChild(particle);
+                
+                // Animate with anime.js
+                anime({
+                    targets: particle,
+                    translateY: [
+                        { value: -20, duration: 2000 },
+                        { value: 0, duration: 2000 }
+                    ],
+                    translateX: [
+                        { value: Math.random() * 40 - 20, duration: 4000 }
+                    ],
+                    opacity: [
+                        { value: 0.5, duration: 2000 },
+                        { value: 0.1, duration: 2000 }
+                    ],
+                    loop: true,
+                    easing: 'easeInOutSine',
+                    delay: Math.random() * 2000
+                });
+            }
+        }
+
+        // Initialize particles
+        createParticles('particles');
+        createParticles('particles2');
+
+        // Animate title on load
+        anime({
+            targets: '.animate-title',
+            scale: [0.8, 1],
+            opacity: [0, 1],
+            duration: 1000,
+            easing: 'easeOutExpo'
+        });
+
+        // Animate cards on reveal
+        Reveal.on('slidechanged', event => {
+            const cards = event.currentSlide.querySelectorAll('.card, .feature-item, .stat');
+            if (cards.length > 0) {
+                anime({
+                    targets: cards,
+                    translateY: [30, 0],
+                    opacity: [0, 1],
+                    delay: anime.stagger(100),
+                    duration: 600,
+                    easing: 'easeOutExpo'
+                });
+            }
+
+            // Animate progress bars
+            const progressBars = event.currentSlide.querySelectorAll('.progress-fill');
+            if (progressBars.length > 0) {
+                progressBars.forEach(bar => {
+                    anime({
+                        targets: bar,
+                        width: bar.style.width,
+                        duration: 1500,
+                        easing: 'easeInOutQuad',
+                        delay: 300
+                    });
+                });
+            }
+
+            // Animate stats
+            const statNumbers = event.currentSlide.querySelectorAll('.stat-number');
+            statNumbers.forEach(stat => {
+                anime({
+                    targets: stat,
+                    scale: [0.5, 1],
+                    opacity: [0, 1],
+                    duration: 800,
+                    easing: 'easeOutElastic(1, .6)'
+                });
+            });
+        });
+
+        // Add pulse animation to CTA button
+        const ctaButton = document.querySelector('.btn');
+        if (ctaButton) {
+            setInterval(() => {
+                anime({
+                    targets: ctaButton,
+                    scale: [1, 1.05, 1],
+                    duration: 1000,
+                    easing: 'easeInOutQuad'
+                });
+            }, 3000);
+        }
+
+        // Hover effects for cards
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.card, .pricing-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    anime({
+                        targets: card,
+                        scale: 1.05,
+                        duration: 300,
+                        easing: 'easeOutQuad'
+                    });
+                });
+                card.addEventListener('mouseleave', () => {
+                    anime({
+                        targets: card,
+                        scale: 1,
+                        duration: 300,
+                        easing: 'easeOutQuad'
+                    });
+                });
+            });
+        });
+
+        // Parallax effect on mouse move
+        document.addEventListener('mousemove', (e) => {
+            const particles = document.querySelectorAll('.particle');
+            const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+            const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+            
+            particles.forEach((particle, index) => {
+                const speed = (index % 3 + 1) * 0.5;
+                anime({
+                    targets: particle,
+                    translateX: moveX * speed,
+                    translateY: moveY * speed,
+                    duration: 1000,
+                    easing: 'easeOutQuad'
+                });
+            });
+        });
+    </script>
+</body>
+</html>

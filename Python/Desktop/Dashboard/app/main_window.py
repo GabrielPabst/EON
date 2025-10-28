@@ -393,7 +393,13 @@ class MainWindow(QMainWindow):
         self.table.setRowCount(len(rows))
 
         name_font = QFont(); name_font.setPointSize(15); name_font.setWeight(QFont.Medium)
-
+        def colorize_icon(icon: QIcon, color: QColor) -> QIcon:
+            pixmap = icon.pixmap(64, 64)
+            painter = QPainter(pixmap)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+            painter.fillRect(pixmap.rect(), color)
+            painter.end()
+            return QIcon(pixmap)
         for r, row in enumerate(rows):
             item = QTableWidgetItem(row.get("name") or "Unnamed")
             item.setFont(name_font)
@@ -412,12 +418,16 @@ class MainWindow(QMainWindow):
             export_icon = self._safe_theme_icon(QStyle.SP_DriveFDIcon, "document-save-as")
             folder_icon = self._safe_theme_icon(QStyle.SP_DirOpenIcon, "folder-open")
             delete_icon = self._safe_theme_icon(QStyle.SP_TrashIcon, "edit-delete")
-
             btnEdit   = self._icon_button(edit_icon,   "Edit")
             btnExport = self._icon_button(export_icon, "Export")
             btnFolder = self._icon_button(folder_icon, "Folder")
             btnDelete = self._icon_button(delete_icon, "Delete")
-
+            
+            btnEdit.setIcon(colorize_icon(btnEdit.icon(), QColor("black")))
+            btnExport.setIcon(colorize_icon(btnExport.icon(), QColor("black")))
+            btnFolder.setIcon(colorize_icon(btnFolder.icon(), QColor("black")))
+            btnDelete.setIcon(colorize_icon(btnDelete.icon(), QColor("black")))
+            
             btnEdit.clicked.connect(lambda _, id=row["id"]: self._open_action_editor(id))
             btnExport.clicked.connect(lambda _, id=row["id"]: self._export_macro(id))
             btnFolder.clicked.connect(lambda _, id=row["id"]: self._open_folder(id))
