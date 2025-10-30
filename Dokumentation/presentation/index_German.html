@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,7 +25,9 @@
             text-align: left;
         }
 
-        .reveal h1, .reveal h2, .reveal h3 {
+        .reveal h1,
+        .reveal h2,
+        .reveal h3 {
             text-transform: none;
             font-weight: 900;
             letter-spacing: -2px;
@@ -59,7 +62,8 @@
         .reveal section {
             background: radial-gradient(ellipse at center, rgba(255, 119, 0, 0.1) 0%, rgba(0, 0, 0, 1) 70%);
         }
-        .reveal ul{
+
+        .reveal ul {
             list-style-type: none;
         }
 
@@ -548,21 +552,22 @@
             border-color: var(--primary-color);
             transform: scale(1.05);
         }
-        ul {
-             
-        }
+
+        ul {}
     </style>
 </head>
+
 <body>
     <div class="reveal">
         <div class="slides">
-            
+
             <!-- Slide 1: Title -->
             <section class="title-slide">
                 <div class="particles" id="particles"></div>
                 <h1 class="animate-title">EON</h1>
                 <div class="subtitle">Die Python-Marktplatz-Revolution</div>
-                <p class="tagline">Das ultimative Desktop- und Web-Marktplatz-Tool mit fortschrittlichen Makro-Funktionen und modernster Bilderkennung</p>
+                <p class="tagline">Das ultimative Desktop- und Web-Marktplatz-Tool mit fortschrittlichen
+                    Makro-Funktionen und modernster Bilderkennung</p>
             </section>
 
             <!-- Slide 2: Das Problem -->
@@ -573,7 +578,8 @@
                         <div class="feature-icon">⏱️</div>
                         <div class="feature-content">
                             <h3>Zeitaufwändige, sich wiederholende Aufgaben</h3>
-                            <p>Unternehmen verschwenden 40 % ihrer Zeit mit manuellen, sich wiederholenden Arbeitsabläufen</p>
+                            <p>Unternehmen verschwenden 40 % ihrer Zeit mit manuellen, sich wiederholenden
+                                Arbeitsabläufen</p>
                         </div>
                     </div>
                     <div class="feature-item">
@@ -587,11 +593,66 @@
                         <div class="feature-icon">🔧</div>
                         <div class="feature-content">
                             <h3>Technische Hürden</h3>
-                            <p>Bestehende Lösungen erfordern Programmierkenntnisse, lange Implementierungszeiten und sind oft nicht dauerhaft stabil</p>
+                            <p>Bestehende Lösungen erfordern Programmierkenntnisse, lange Implementierungszeiten und
+                                sind oft nicht dauerhaft stabil</p>
                         </div>
                     </div>
                 </div>
             </section>
+            <!-- Neue Slides: User Stories -->
+            <section>
+                <h2>User Story — Lukas</h2>
+                <div class="two-column">
+                    <div class="column-content">
+                        <h3 style="color: var(--primary-color);">Lukas: Morgenroutine mit Makros</h3>
+                        <p style="color: #ccc;">Lukas startet jeden Morgen schnell seine Arbeit: Nachrichtentools
+                            öffnen, Browser, und als erstes seine Lieblingsplaylist auf Spotify. Statt manuell zu
+                            klicken, startet er <span class="highlight">EON</span> — ein Klick, und alles läuft.</p>
+                        <ul class="custom-list">
+                            <li>EON startet per Makro Spotify &amp; spielt Playlist "Morning Drive"</li>
+                            <li>Regelt Lautstärke, öffnet Arbeitsdokumente und wechselt zum Dashboard</li>
+                        </ul>
+                        <p>Das Besondere! <br> All das funktioniert unabhängig von Veränderungen in der UI, Auflösung,
+                            Ladezeiten...</p>
+                    </div>
+                    <div class="column-content" style="text-align:center;">
+                        <div class="logo-item"
+                            style="height: 500px; width: 250px; margin: 1rem auto; display:flex; align-items:center; justify-content:center;">
+                            <img src="https://images.vexels.com/media/users/3/127303/isolated/svg/d2d88005bdd8195bb5930634e712c8de.svg"
+                                alt="Spotify Logo" style="max-width:100%;">
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <h2>User Story — Sarah</h2>
+                <div class="two-column">
+                    <div class="column-content">
+                        <h3 style="color: var(--primary-color);">Sarah: Ingenieurin</h3>
+                        <p style="color: #ccc;">Sarah arbeitet in einem mittelgroßen Softwareunternehmen. Jede Woche
+                            gibt es Releases — vorher war das manuelle UI-Testing zeitaufwändig. Mit <span
+                                class="highlight">EON</span> zeichnete sie einen Ablauf einmal auf und spielt ihn wieder
+                            ab, auch wenn sich das Interface leicht ändert.</p>
+                        <ul class="custom-list">
+                            <li>Aufzeichnung: Login → Testsuite starten → wichtige Funktionen prüfen</li>
+                            <li>EON erkennt Verschiebungen und passt Klicks visuell an</li>
+                        </ul>
+                        <p>Das Ergebnis! <br>Anstatt Stunden fürs manuellen Testen zu verschwenden, erledigt EON die
+                            Aufgabe in Minuten.</p>
+
+                    </div>
+                    <div class="column-content" style="text-align:center;">
+                        <div style="margin-top:1rem;">
+                            <div class="logo-item"
+                                style="height: 500px; width: 250px; margin: 1rem auto; display:flex; align-items:center; justify-content:center;">
+                                <img src="woman.png" alt="Spotify Logo" style="max-width:100%;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
 
             <!-- Slide 3: The Solution -->
             <section>
@@ -599,7 +660,7 @@
                 <div class="two-column">
                     <div class="column-content">
                         <h3>EON macht Automatisierung für alle zugänglich</h3>
-                        <ul style="" class="custom-list">
+                        <ul class="custom-list">
                             <li>No-Code-Oberfläche mit der Leistung von Python</li>
                             <li>Vorgefertigte Vorlagen im Marktplatz</li>
                             <li>Fortschrittliche Bilderkennung</li>
@@ -612,7 +673,7 @@
                     </div>
                 </div>
             </section>
-               <section>
+            <section>
                 <h2>Lernen Sie das Team kennen</h2>
                 <div class="team-grid">
                     <div class="team-member">
@@ -653,12 +714,38 @@
                         </ul>
                     </div>
                 </div>
-                <h3 style="margin-top: 3rem; color: var(--primary-color);">Vertrauenspartner</h3>
-                <div class="logo-grid">
-                    <div class="logo-item"><img src="https://www.moveit.at/media/moveIT_logo_on_Black.svg"></div>
+            </section>
+            <!-- Neue Slide: Ziele dieses Meetings -->
+            <section>
+                <h2>Ziele dieses Meetings</h2>
+                <div class="two-column">
+                    <div class="column-content">
+                        <h3 style="color: var(--primary-color);">Was wir erreichen wollen</h3>
+                        <ul class="custom-list">
+                            <li>Marktanalyse für unser Produkt durchführen</li>
+                            <li>Mit dem Namen der Firma als Interessenten werben</li>
+                            <li>Erwähnen, dass die Firma einen Nutzen in der Software sieht und sie möglicherweise
+                                zukünftig verwenden würde</li>
+                        </ul>
+                    </div>
+                    <div class="column-content" style="text-align: center;">
+                        <h3>Aktueller Interessent</h3>
+                        <div class="logo-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
+                            <div class="logo-item" style="height: 120px; display: flex; align-items: center; flex-direction: column; justify-content: center; background: none; border-radius: 8px;">
+                                <img src="moveIT_logo_rgb.png" alt="Interessent Logo" style="max-height: 100%; max-width: 100%;">
+                                <p>MoveIT</p>
+                            </div>
+                            <div class="logo-item" style="height: 120px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed #888;">
+                                <span style="color: #ccc;">Hier wollen wir Ihr Logo sehen</span>
+                            </div>
+                            <div class="logo-item" style="height: 120px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed #888;">
+                                <span style="color: #ccc;">Hier wollen wir Ihr Logo sehen</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
-            <!-- Slide: Marktanalyse -->
+            <!-- Slide: Marktanalyse 
             <section>
                 <h2>Konkurrenzsituation</h2>
                 <div class="logo-grid" style="grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 2rem;">
@@ -691,31 +778,24 @@
                     </div>
                 </div>
             </section>
-
+        -->
             <!-- Slide: Unsere Nische -->
             <section>
-                <h2>Unsere Marktnische</h2>
+                <h2>Unser Markt</h2>
                 <div class="two-column">
                     <div class="column-content">
-                        <div class="feature-item">
-                            <div class="feature-icon"><i class="fas fa-star"></i></div>
-                            <div class="feature-content">
-                                <h3>Alleinstellungsmerkmale</h3>
-                                <ul class="custom-list">
-                                    <li>Bedienung von Benuteroberflächen</li>
-                                    <li>Unabhängigkeit von Hintergrundsystemen</li>
-                                    <li>KI-gestützte Bilderkennung</li>
-                                </ul>
-                            </div>
-                        </div>
                         <div class="feature-item">
                             <div class="feature-icon"><i class="fas fa-bullseye"></i></div>
                             <div class="feature-content">
                                 <h3>Zielgruppe</h3>
-                                <p>B2B aber auch B2C Menschen die mit Computern arbeiten</p>
+                                 <ul class="custom-list">
+                                    <li>B2B - für alle Unternehmen in denen repetative Aufgaben anfallen</li>
+                                    <li>B2C - für alle Endnutzer die ihre privaten Aufgaben automatisieren wollen</li>
+                                    <li style="opacity: 0;"></li>
+                                </ul>
                             </div>
                         </div>
-                       
+
                     </div>
                     <div class="column-content">
                         <div class="feature-item">
@@ -735,8 +815,16 @@
 
             <!-- Slide: Wettbewerbsvorteil -->
             <section>
-                <h2>Unser Wettbewerbsvorteil</h2>
+                <h2>Was macht uns besonders ? </h2>
                 <div class="feature-list">
+                    <div class="feature-item">
+                        <div class="feature-icon"><i class="fas fa-balance-scale"></i></div>
+                        <div class="feature-content">
+                            <h3>Bedienung von Benuteroberflächen</h3>
+                            <p>Vereint die Einfachheit traditioneller Makros mit der Kompatibilität komplexer Tools
+                            </p>
+                        </div>
+                    </div>
                     <div class="feature-item">
                         <div class="feature-icon"><i class="fas fa-balance-scale"></i></div>
                         <div class="feature-content">
@@ -750,99 +838,104 @@
                             <h3>Power ohne Bindung</h3>
                             <p>Automatisierung ohne Schnittstellen oder Abhängigkeiten durch Bilderkennung und KI</p>
                         </div>
+                    </div>
+                   
                 </div>
-            </section>
-        
-            <!-- Slide 5: Product Features -->
-            <section>
-                <h2>Wichtige Funktionen</h2>
-                <div class="card-grid">
-                    <div class="card">
-                        <div class="card-icon"><i class="fas fa-mouse-pointer"></i></div>
-                        <h3>Erweiterte Makros</h3>
-                        <p>Komplexe Arbeitsabläufe mit pixelgenauer Präzision aufzeichnen und wiedergeben</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon"><i class="fas fa-eye"></i></div>
-                        <h3>Bilderkennung & Kontext Mode</h3>
-                        <p>KI-gestützte Erkennung visueller Elemente für zuverlässige Automatisierung und echt Zeit generierung</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon"><i class="fas fa-store"></i></div>
-                        <h3>Marktplatz</h3>
-                        <p>Durchsuchen und verwenden Sie sofort vorgefertigte Automatisierungsskripte</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-icon"><i class="fas fa-code"></i></div>
-                        <h3>Scripting</h3>
-                        <p>Vorgefertigte oder eigen erstellte Skripte direkt in die Makroausführung einbinden</p>
-                    </div>
-                </div>
-            </section>
+        </section>
 
-            <section>
-                <h2>Programmstruktur</h2>
-                <div class="two-column">
-                    <div class="card" style="height: 100%;">
-                        <div class="card-icon"><i class="fas fa-desktop"></i></div>
-                        <h3>Desktop-Anwendung</h3>
-                        <ul class="custom-list">
-                            <li>Dashboard zur Verwaltung aller Makros</li>
-                            <li>Integrierter Makro-Editor mit erweiterten Funktionen</li>
-                            <li>Aufnahmestudio zur Erstellung neuer Makros</li>
-                            <li>Integrierter Zugriff auf den Marktplatz</li>
-                            <li>Makroausführung in Echtzeit</li>
-                        </ul>
-                    </div>
-                    <div class="card" style="height: 100%;">
-                        <div class="card-icon"><i class="fas fa-shopping-cart"></i></div>
-                        <h3>Web Marktplatz</h3>
-                        <ul class="custom-list">
-                            <li>Durchsuchen Sie von der Community erstellte Makros</li>
-                            <li>Laden Sie Ihre eigenen Makros hoch und teilen Sie sie</li>
-                            <li>Bewertungs- und Rezensionensystem</li>
-                            <li>Kategoriebasierte Organisation</li>
-                        </ul>
+        <!-- Slide 5: Product Features -->
+        <section>
+            <h2>Wichtige Funktionen</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-mouse-pointer"></i></div>
+                    <h3>Erweiterte Makros</h3>
+                    <p>Komplexe Arbeitsabläufe mit pixelgenauer Präzision aufzeichnen und wiedergeben</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-eye"></i></div>
+                    <h3>Bilderkennung & Kontext Mode</h3>
+                    <p>KI-gestützte Erkennung visueller Elemente für zuverlässige Automatisierung und echt Zeit
+                        generierung</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-store"></i></div>
+                    <h3>Marktplatz</h3>
+                    <p>Durchsuchen und verwenden Sie sofort vorgefertigte Automatisierungsskripte</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-code"></i></div>
+                    <h3>Scripting</h3>
+                    <p>Vorgefertigte oder eigen erstellte Skripte direkt in die Makroausführung einbinden</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Programmstruktur</h2>
+            <div class="two-column">
+                <div class="card" style="height: 100%;">
+                    <div class="card-icon"><i class="fas fa-desktop"></i></div>
+                    <h3>Desktop-Anwendung</h3>
+                    <ul class="custom-list">
+                        <li>Dashboard zur Verwaltung aller Makros</li>
+                        <li>Integrierter Makro-Editor mit erweiterten Funktionen</li>
+                        <li>Aufnahmestudio zur Erstellung neuer Makros</li>
+                        <li>Integrierter Zugriff auf den Marktplatz</li>
+                        <li>Makroausführung in Echtzeit</li>
+                    </ul>
+                </div>
+                <div class="card" style="height: 100%;">
+                    <div class="card-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <h3>Web Marktplatz</h3>
+                    <ul class="custom-list">
+                        <li>Durchsuchen Sie von der Community erstellte Makros</li>
+                        <li>Laden Sie Ihre eigenen Makros hoch und teilen Sie sie</li>
+                        <li>Bewertungs- und Rezensionensystem</li>
+                        <li>Kategoriebasierte Organisation</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: So funktioniert es -->
+        <section>
+            <h2>So funktioniert es</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">Step 1</div>
+                    <div class="timeline-content">
+                        <h3>Makros abrufen</h3>
+                        <p>Wählen Sie aus Hunderten vorgefertigter Automatisierungsvorlagen oder beginnen Sie von
+                            Grund auf</p>
                     </div>
                 </div>
-            </section>
-
-            <!-- Slide 6: So funktioniert es -->
-            <section>
-                <h2>So funktioniert es</h2>
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-date">Step 1</div>
-                        <div class="timeline-content">
-                            <h3>Makros abrufen</h3>
-                            <p>Wählen Sie aus Hunderten vorgefertigter Automatisierungsvorlagen oder beginnen Sie von Grund auf</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-date">Step 2</div>
-                        <div class="timeline-content">
-                            <h3>Arbeitsablauf anpassen</h3>
-                            <p>Verwenden Sie unsere intuitive Oberfläche, um Einstellungen und Parameter an Ihre Bedürfnisse anzupassen</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-date">Step 3</div>
-                        <div class="timeline-content">
-                            <h3>Automatisierung einrichten</h3>
-                            <p>Weisen Sie Ihr Makro der gewünschten Tastenkombination zu</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-date">Step 4</div>
-                        <div class="timeline-content">
-                            <h3>Ausführen</h3>
-                            <p>Verwenden Sie Ihre Automatisierungen überall und teilen Sie sie mit anderen Benutzern</p>
-                        </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">Step 2</div>
+                    <div class="timeline-content">
+                        <h3>Arbeitsablauf anpassen</h3>
+                        <p>Verwenden Sie unsere intuitive Oberfläche, um Einstellungen und Parameter an Ihre
+                            Bedürfnisse anzupassen</p>
                     </div>
                 </div>
-            </section>
+                <div class="timeline-item">
+                    <div class="timeline-date">Step 3</div>
+                    <div class="timeline-content">
+                        <h3>Automatisierung einrichten</h3>
+                        <p>Weisen Sie Ihr Makro der gewünschten Tastenkombination zu</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">Step 4</div>
+                    <div class="timeline-content">
+                        <h3>Ausführen</h3>
+                        <p>Verwenden Sie Ihre Automatisierungen überall und teilen Sie sie mit anderen Benutzern</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-            <!-- Slide 7: Traction & Metrics 
+        <!-- Slide 7: Traction & Metrics 
             <section>
                 <h2>Traction & Growth</h2>
                 <div class="two-column">
@@ -899,62 +992,62 @@
                 </div>
             </section>
             -->
-            <!-- Slide 8: Business Model -->
-            <section>
-                <h2>Einnahmenmodell (vorläufig)</h2>
-                <div class="pricing-grid">
-                    <div class="pricing-card">
-                        <div class="pricing-name">Starter-Lizenz</div>
-                        <div class="pricing-price">FREE</div>
-                        <div class="pricing-period">‎ </div>
-                        <ul class="pricing-features">
-                            <li>Unbegrenzte Makros</li>
-                            <li>Kein Kontextmodus</li>
-                            <li>Kein Editormodus</li>
-                            <li>Limited Marktplatz Accessability</li>
-                        </ul>
-                    </div>
-                    <div class="pricing-card featured">
-                        <div class="pricing-name">Professionelle Lizenz</div>
-                        <div class="pricing-price">$?</div>
-                        <div class="pricing-period">pro Monat</div>
-                        <ul class="pricing-features">
-                            <li>Unbegrenzte Makros</li>
-                            <li>Eingeschränkter Kontextmodus</li>
-                            <li>Vollständiger Editormodus</li>
-                            <li>Full Marktplatz Accessability</li>
-                        </ul>
-                    </div>
-                    <div class="pricing-card">
-                        <div class="pricing-name">Unternehmenslizenz</div>
-                        <div class="pricing-price">$?</div>
-                        <div class="pricing-period">pro Monat</div>
-                        <ul class="pricing-features">
-                            <li>Alles aus der Pro-Version</li>
-                            <li>Unbegrenzter Kontextmodus</li>
-                            <li>Persönlicher Account-Manager</li>
-                            <li>Kundensupport</li>
-                        </ul>
+        <!-- Slide 8: Business Model -->
+        <section>
+            <h2>Einnahmenmodell (vorläufig)</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-name">Starter-Lizenz</div>
+                    <div class="pricing-price">FREE</div>
+                    <div class="pricing-period">‎ </div>
+                    <ul class="pricing-features">
+                        <li>Unbegrenzte Makros</li>
+                        <li>Kein Kontextmodus</li>
+                        <li>Kein Editormodus</li>
+                        <li>Limited Marktplatz Accessability</li>
+                    </ul>
+                </div>
+                <div class="pricing-card featured">
+                    <div class="pricing-name">Professionelle Lizenz</div>
+                    <div class="pricing-price">$?</div>
+                    <div class="pricing-period">pro Monat</div>
+                    <ul class="pricing-features">
+                        <li>Unbegrenzte Makros</li>
+                        <li>Eingeschränkter Kontextmodus</li>
+                        <li>Vollständiger Editormodus</li>
+                        <li>Full Marktplatz Accessability</li>
+                    </ul>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-name">Unternehmenslizenz</div>
+                    <div class="pricing-price">$?</div>
+                    <div class="pricing-period">pro Monat</div>
+                    <ul class="pricing-features">
+                        <li>Alles aus der Pro-Version</li>
+                        <li>Unbegrenzter Kontextmodus</li>
+                        <li>Persönlicher Account-Manager</li>
+                        <li>Kundensupport</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 10: Roadmap -->
+        <section>
+            <h2>Produktfahrplan (vorläufig)</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">November 2025</div>
+                    <div class="timeline-content">
+                        <h3>Starter-Lizenzfunktionen</h3>
+                        <p>Alle Starter-Funktionen abgeschlossen</p>
                     </div>
                 </div>
-            </section>
-
-            <!-- Slide 10: Roadmap -->
-            <section>
-                <h2>Produktfahrplan (vorläufig)</h2>
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-date">November 2025</div>
-                        <div class="timeline-content">
-                            <h3>Starter-Lizenzfunktionen</h3>
-                            <p>Alle Starter-Funktionen abgeschlossen</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-date">Start of 2026</div>
-                        <div class="timeline-content">
-                            <h3>Fertiggestellte Diplomarbeit</h3>
-                            <p>Inklusive professioneller Dokumentation und Abschlusspräsentation</p>
+                <div class="timeline-item">
+                    <div class="timeline-date">Start of 2026</div>
+                    <div class="timeline-content">
+                        <h3>Fertiggestellte Diplomarbeit</h3>
+                        <p>Inklusive professioneller Dokumentation und Abschlusspräsentation</p>
                     </div>
                     <div class="timeline-item">
                         <div class="timeline-date">End of 2026</div>
@@ -971,11 +1064,11 @@
                         </div>
                     </div>
                 </div>
-            </section>
+        </section>
 
-            <!-- Slide 11: Team -->
+        <!-- Slide 11: Team -->
 
-            <!-- Slide 13: Customer Success Stories 
+        <!-- Slide 13: Customer Success Stories 
             <section>
                 <h2>Customer Success</h2>
                 <div class="card-grid">
@@ -997,7 +1090,7 @@
                 </div>
             </section>-->
 
-            <!-- Slide 14: Financial Projections 
+        <!-- Slide 14: Financial Projections 
             <section>
                 <h2>Financial Projections</h2>
                 <div class="two-column">
@@ -1024,7 +1117,7 @@
                     </div>
                 </div>
             </section>-->
-            <!-- Slide 15: Why Now? 
+        <!-- Slide 15: Why Now? 
             <section>
                 <h2>Why Now?</h2>
                 <div class="feature-list">
@@ -1077,65 +1170,68 @@
                 </div>
             </section>
         -->
-            <!-- Slide 19: Vision -->
-            <section>
-                <h2>Unsere Vision</h2>
-                <div class="quote">
-                    "Wir möchten jedem Computeranwender ermöglichen, sich auf das Wesentliche zu konzentrieren – Innovation und Wachstum statt repetitiver Aufgaben."
+        <!-- Slide 19: Vision -->
+        <section>
+            <h2>Unsere Vision</h2>
+            <div class="quote">
+                "Wir möchten jedem Computeranwender ermöglichen, sich auf das Wesentliche zu konzentrieren –
+                Innovation und Wachstum statt repetitiver Aufgaben."
+            </div>
+            <div class="stat-row" style="margin-top: 4rem;">
+                <div class="stat">
+                    <span class="stat-number">1000+</span>
+                    <div class="stat-label">Aktive Nutzer bis 2028</div>
                 </div>
-                <div class="stat-row" style="margin-top: 4rem;">
-                    <div class="stat">
-                        <span class="stat-number">1000+</span>
-                        <div class="stat-label">Aktive Nutzer bis 2028</div>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-number">#1</span>
-                        <div class="stat-label">Plattform für Makros</div>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-number">5M+</span>
-                        <div class="stat-label">Jährlich eingesparte Stunden</div>
-                    </div>
+                <div class="stat">
+                    <span class="stat-number">#1</span>
+                    <div class="stat-label">Plattform für Makros</div>
                 </div>
-            </section>
+                <div class="stat">
+                    <span class="stat-number">5M+</span>
+                    <div class="stat-label">Jährlich eingesparte Stunden</div>
+                </div>
+            </div>
+        </section>
 
-            <!-- Slide 20: Contact & CTA -->
-            <section class="cta-section">
-                <h2>Gestalten wir gemeinsam die Zukunft</h2>
-                <p style="font-size: 1.3rem; max-width: 700px; margin: 2rem auto; color: #ccc;">
-                    Begleiten Sie uns dabei, die Art und Weise zu revolutionieren, wie Unternehmen ihre Arbeitsabläufe automatisieren.
-                </p>
-                <div class="contact-grid" style="margin: 3rem 0;">
-                    <div class="contact-item">
-                        <div class="contact-icon"><i class="fas fa-envelope"></i></div>
-                        <div class="contact-label">E-Mail</div>
-                        <div class="contact-value">gabriel.pabst36@gmail.com</div>
-                    </div>
-                    <div class="contact-item">
-                        <div class="contact-icon"><i class="fas fa-globe"></i></div>
-                        <div class="contact-label">Webseite</div>
-                        <div class="contact-value">https://eon-makros.netlify.app/</div>
-                    </div>
-                    <div class="contact-item">
-                        <div class="contact-icon"><i class="fas fa-calendar"></i></div>
-                        <div class="contact-label">Zeitplan</div>
-                        <div class="contact-value">Demo buchen</div>
-                    </div>
+        <!-- Slide 20: Contact & CTA -->
+        <section class="cta-section">
+            <h2>Gestalten wir gemeinsam die Zukunft</h2>
+            <p style="font-size: 1.3rem; max-width: 700px; margin: 2rem auto; color: #ccc;">
+                Begleiten Sie uns dabei, die Art und Weise zu revolutionieren, wie Unternehmen ihre Arbeitsabläufe
+                automatisieren.
+            </p>
+            <div class="contact-grid" style="margin: 3rem 0;">
+                <div class="contact-item">
+                    <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+                    <div class="contact-label">E-Mail</div>
+                    <div class="contact-value">gabriel.pabst36@gmail.com</div>
                 </div>
-                <a style="text-decoration: none; color: black;" href="#" class="btn">Zeitplan Your Demo</a>
-            </section>
-
-            <!-- Slide 21: Danke -->
-            <section class="title-slide">
-                <div class="particles" id="particles2"></div>
-                <h1 style="font-size: 5rem;">Danke</h1>
-                <p class="tagline" style="font-size: 1.5rem;">Fragen?</p>
-                <div style="margin-top: 3rem;">
-                    <p style="color: var(--primary-color); font-size: 1.3rem; font-weight: bold;">Lassen Sie uns die Zukunft automatisieren</p>
+                <div class="contact-item">
+                    <div class="contact-icon"><i class="fas fa-globe"></i></div>
+                    <div class="contact-label">Webseite</div>
+                    <div class="contact-value">https://eon-makros.netlify.app/</div>
                 </div>
-            </section>
+                <div class="contact-item">
+                    <div class="contact-icon"><i class="fas fa-calendar"></i></div>
+                    <div class="contact-label">Zeitplan</div>
+                    <div class="contact-value">Demo buchen</div>
+                </div>
+            </div>
+            <a style="text-decoration: none; color: black;" href="#" class="btn">Zeitplan Your Demo</a>
+        </section>
 
-        </div>
+        <!-- Slide 21: Danke -->
+        <section class="title-slide">
+            <div class="particles" id="particles2"></div>
+            <h1 style="font-size: 5rem;">Danke</h1>
+            <p class="tagline" style="font-size: 1.5rem;">Fragen?</p>
+            <div style="margin-top: 3rem;">
+                <p style="color: var(--primary-color); font-size: 1.3rem; font-weight: bold;">Lassen Sie uns die
+                    Zukunft automatisieren</p>
+            </div>
+        </section>
+
+    </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
@@ -1159,7 +1255,7 @@
         function createParticles(containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
-            
+
             for (let i = 0; i < 30; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
@@ -1169,7 +1265,7 @@
                 particle.style.height = particle.style.width;
                 particle.style.opacity = Math.random() * 0.3 + 0.1;
                 container.appendChild(particle);
-                
+
                 // Animate with anime.js
                 anime({
                     targets: particle,
@@ -1286,7 +1382,7 @@
             const particles = document.querySelectorAll('.particle');
             const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
             const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
-            
+
             particles.forEach((particle, index) => {
                 const speed = (index % 3 + 1) * 0.5;
                 anime({
@@ -1300,4 +1396,5 @@
         });
     </script>
 </body>
+
 </html>
