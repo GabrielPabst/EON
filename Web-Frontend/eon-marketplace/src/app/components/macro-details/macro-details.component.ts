@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Macro } from '../../models/macro.model';
@@ -11,12 +11,14 @@ import { MacroService } from '../../services/macro.service';
   templateUrl: './macro-details.component.html',
   styleUrl: './macro-details.component.css'
 })
-export class MacroDetailsComponent {
+export class MacroDetailsComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private macroService = inject(MacroService);
+  private api = inject(MacroService);
 
   macro: Macro | undefined;
+  busy = false;
+  error = '';
 
   categoryImageMap: Record<string, string> = {
     Word: 'assets/word.png',
@@ -29,9 +31,25 @@ export class MacroDetailsComponent {
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.macro = this.macroService.getAll().find(m => m.id === id);
+    if (!id) {
+      this.error = 'Keine ID angegeben.';
+      return;
     }
+
+    const cached = this.api.getAll().find(m => m.id === id);
+    if (cached) {
+      this.macro = cached;
+      return;
+    }
+
+    this.busy = true;
+    this.api.getById(id).subscribe({
+      next: m => { this.macro = m; this.busy = false; },
+      error: err => {
+        this.error = err?.error?.message || err?.statusText || 'Makro nicht gefunden.';
+        this.busy = false;
+      }
+    });
   }
 
   backToList() {
@@ -40,15 +58,7 @@ export class MacroDetailsComponent {
 
   download() {
     if (this.macro) {
-      const exampleContent = `# ${this.macro.name}\n\n${this.macro.description}\n\nKategorie: ${this.macro.category}`;
-      const blob = new Blob([exampleContent], { type: 'text/plain' });
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = this.macro.filename || 'macro.txt';
-      a.click();
-      URL.revokeObjectURL(url);
+      this.api.download(this.macro.id).subscribe();
     }
   }
 
@@ -61,5 +71,9 @@ export class MacroDetailsComponent {
 
   get categoryAlt(): string {
     return this.macro?.category ?? 'Kategorie';
+  }
+
+  isVideo(url: string): boolean {
+    return /\.(mp4|webm)$/i.test(url);
   }
 }

@@ -1,14 +1,14 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { Macro } from '../../models/macro.model';
-import { Router } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { Macro } from '../../models/macro.model';
+import { MacroService } from '../../services/macro.service';
 
 @Component({
   selector: 'app-macro-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './macro-list.component.html',
   styleUrls: ['./macro-list.component.css']
 })
@@ -19,9 +19,9 @@ export class MacroListComponent implements OnInit {
 
   categories = ['Alle', 'Word', 'Excel', 'Multimedia', 'PDF', 'Netzwerk', 'Tools'];
   macros: Macro[] = [];
+  busy = false;
 
-  http = inject(HttpClient);
-
+  // Optional: statische Thumbnails pro Kategorie
   categoryImageMap: Record<string, string> = {
     Word: 'assets/word.png',
     Excel: 'assets/excel.png',
@@ -31,26 +31,47 @@ export class MacroListComponent implements OnInit {
     Tools: 'assets/tools.png'
   };
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private api: MacroService) {}
 
   ngOnInit(): void {
-    this.http.get<Macro[]>('assets/macros.json').subscribe(data => {
-      this.macros = data.map(m => ({
-        ...m,
-        file: null,
-        createdAt: new Date(m.createdAt)
-      }));
+    // Stream abonnieren
+    this.api.stream().subscribe(list => (this.macros = list));
+    // Initial: komplette Marketplace-Liste
+    this.loadMarketplace();
+  }
+
+  // --- Backend Calls ---
+  loadMarketplace(page = 1, perPage = 30) {
+    this.busy = true;
+    this.api.fetchMarketplace(page, perPage).subscribe({
+      next: () => (this.busy = false),
+      error: () => (this.busy = false)
     });
   }
 
-  get filteredMacros(): Macro[] {
-    return this.macros.filter(macro =>
-      macro.name.toLowerCase().includes(this.nameFilter.toLowerCase()) &&
-      (this.categoryFilter === 'Alle' || macro.category === this.categoryFilter)
-    );
+  runSearch(page = 1, perPage = 30) {
+    const q = this.nameFilter.trim();
+    const usecase = this.categoryFilter !== 'Alle' ? this.categoryFilter : undefined;
+
+    // Ohne Filter → Marketplace
+    if (!q && !usecase) {
+      this.loadMarketplace(page, perPage);
+      return;
+    }
+
+    this.busy = true;
+    this.api.search(q, usecase, undefined, page, perPage).subscribe({
+      next: () => (this.busy = false),
+      error: () => (this.busy = false)
+    });
   }
 
+  // --- UI Events ---
+  onFilterChange() {
+    this.runSearch();
+  }
 
+  // --- Helpers/UI ---
   getImagePath(category: string): string {
     return this.categoryImageMap[category] || '';
   }
@@ -70,6 +91,7 @@ export class MacroListComponent implements OnInit {
       'border-green-500 hover:shadow-green-500/40': category === 'Excel',
       'border-blue-500 hover:shadow-blue-500/40': category === 'Word',
       'border-yellow-400 hover:shadow-yellow-500/40': category === 'Netzwerk' || category === 'Tools',
+      'border-white/10': !category
     };
   }
 
@@ -79,9 +101,7 @@ export class MacroListComponent implements OnInit {
       'text-pink-400 border-pink-400': category === 'PDF',
       'text-green-400 border-green-400': category === 'Excel',
       'text-blue-400 border-blue-400': category === 'Word',
-      'text-yellow-400 border-yellow-400': category === 'Netzwerk' || category === 'Tools',
+      'text-yellow-400 border-yellow-400': category === 'Netzwerk' || category === 'Tools'
     };
   }
-
-
 }

@@ -1,13 +1,22 @@
 <section class="w-full min-h-screen bg-deepblack text-white px-6 py-24 font-sans">
-  <div
-    class="max-w-6xl mx-auto bg-black/60 rounded-xl shadow-xl border border-white/10 p-10 backdrop-blur grid md:grid-cols-2 gap-12 relative"
-  >
-    @if (macro) {
-      <!-- Kategorie-Badge groß, rechts oben, leicht überlappt -->
-      <div
-        class="absolute -top-12 right-8 z-10 drop-shadow-2xl"
-        style="transform: scale(1.5);"
-      >
+  <div class="max-w-6xl mx-auto bg-black/60 rounded-xl shadow-xl border border-white/10 p-10 backdrop-blur grid md:grid-cols-2 gap-12 relative">
+
+    @if (busy) {
+      <div class="col-span-2 text-center text-white/70">Laden…</div>
+    }
+
+    @if (error && !busy) {
+      <div class="col-span-2 text-center text-red-400">{{ error }}</div>
+      <div class="col-span-2 text-center mt-4">
+        <button (click)="backToList()" class="px-6 py-2 rounded-md border border-white/30 hover:border-white transition">
+          ← Zurück
+        </button>
+      </div>
+    }
+
+    @if (macro && !busy && !error) {
+
+      <div class="absolute -top-12 right-8 z-10 drop-shadow-2xl" style="transform: scale(1.5);">
         <img
           [src]="categoryImage"
           [alt]="categoryAlt"
@@ -17,23 +26,29 @@
       </div>
 
       <!-- Preview -->
-      <div
-        class="h-64 rounded-xl bg-softgray/20 border border-white/10 flex items-center justify-center text-white/30 text-sm shadow-inner"
-      >
-        Vorschau / Code / Bild / Info Placeholder
+      <div class="h-64 rounded-xl bg-softgray/20 border border-white/10 flex items-center justify-center text-white/30 text-sm shadow-inner overflow-hidden">
+        @if (macro.previewUrl) {
+          <img
+            [src]="macro.previewUrl"
+            alt="Preview"
+            class="w-full h-full object-contain"
+          />
+        } @else {
+          <span>Keine Vorschau vorhanden</span>
+        }
       </div>
 
       <!-- Infos -->
       <div class="space-y-6">
         <div>
           <h1 class="text-4xl md:text-5xl font-extrabold text-accent mb-2">{{ macro.name }}</h1>
-          <p class="text-sm italic text-white/60">{{ macro.category }}</p>
+          <p class="text-sm italic text-white/60">{{ macro.category || 'Allgemein' }}</p>
         </div>
 
         <p class="text-lg text-white/90 leading-relaxed">{{ macro.description }}</p>
 
         <div class="text-sm text-white/50 space-y-1">
-          <p><strong>Dateiname:</strong> {{ macro.filename || '–' }}</p>
+          <p><strong>Dateiname:</strong> {{ macro.filename || ('macro_' + macro.id + '.zip') }}</p>
           <p>
             <strong>Erstellt am:</strong>
             {{ macro.createdAt | date:'fullDate' }} – {{ macro.createdAt | date:'shortTime' }}
@@ -41,26 +56,14 @@
         </div>
 
         <div class="flex gap-4 pt-4">
-          <button
-            (click)="backToList()"
-            class="px-6 py-2 rounded-md border border-white/30 hover:border-white transition"
-          >
+          <button (click)="backToList()" class="px-6 py-2 rounded-md border border-white/30 hover:border-white transition">
             ← Zurück
           </button>
 
-          <button
-            (click)="download()"
-            class="px-6 py-2 rounded-md bg-accent text-black font-semibold hover:brightness-110 transition"
-          >
+          <button (click)="download()" class="px-6 py-2 rounded-md bg-accent text-black font-semibold hover:brightness-110 transition">
             Download
           </button>
         </div>
-      </div>
-    }
-
-    @else {
-      <div class="col-span-2 text-center text-white/50 italic">
-        Makro nicht gefunden.
       </div>
     }
   </div>

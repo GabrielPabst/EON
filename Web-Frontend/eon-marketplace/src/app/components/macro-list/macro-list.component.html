@@ -4,21 +4,22 @@
   <div class="w-full px-4 md:px-12 xl:px-24">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-4xl font-bold text-accent mb-4">Unsere Makros</h2>
-      <p class="text-gray-400 text-lg">
-        Durchsuche unsere geprüfte Makrobibliothek für Office, Multimedia & mehr.
-      </p>
+      <p class="text-gray-400 text-lg">Durchsuche unsere geprüfte Makrobibliothek für Office, Multimedia & mehr.</p>
     </div>
 
+    <!-- Filter -->
     <div class="flex flex-col md:flex-row gap-4 mb-12 justify-center items-center">
       <input
         type="text"
         [(ngModel)]="nameFilter"
+        (ngModelChange)="onFilterChange()"
         placeholder="Nach Makro suchen..."
         class="bg-black text-white placeholder-white/60 px-4 py-2 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-accent w-full md:w-80 text-sm transition"
       />
 
       <select
         [(ngModel)]="categoryFilter"
+        (ngModelChange)="onFilterChange()"
         class="bg-black text-white px-3 py-2 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-accent text-sm transition"
       >
         @for (cat of categories; track cat) {
@@ -27,8 +28,9 @@
       </select>
     </div>
 
+    <!-- Grid -->
     <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-      @for (macro of filteredMacros; track macro.id) {
+      @for (macro of macros; track macro.id) {
         <div
           (click)="goToDetail(macro.id)"
           class="cursor-pointer p-5 rounded-xl bg-black text-white border transition-all duration-300 shadow-md hover:shadow-[0_0_16px_4px_rgba(255,165,0,0.4)] group"
@@ -53,18 +55,21 @@
               class="inline-block px-2 py-0.5 rounded-full text-xs font-medium border mb-2 bg-white/10"
               [ngClass]="categoryTagClass(macro.category)"
             >
-              {{ macro.category }}
+              {{ macro.category || 'Allgemein' }}
             </span>
 
             <p class="text-sm text-white/50">
-              {{ macro.filename }} • {{ macro.createdAt | date:'mediumDate' }}
+              {{ macro.filename || ('macro_' + macro.id + '.zip') }} • {{ macro.createdAt | date:'mediumDate' }}
             </p>
           </div>
         </div>
       }
 
-      @if (filteredMacros.length === 0) {
+      @if (macros.length === 0 && !busy) {
         <p class="text-white/40 italic text-center col-span-full mt-6">Keine Makros gefunden.</p>
+      }
+      @if (busy) {
+        <p class="text-white/60 text-center col-span-full mt-6">Laden…</p>
       }
     </div>
   </div>

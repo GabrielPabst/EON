@@ -12,6 +12,9 @@ import zipfile
 load_dotenv()
 
 app = Flask(__name__)
+from flask_cors import CORS
+CORS(app, origins=["http://localhost:4200"], supports_credentials=True)
+
 
 # Configuration from environment variables with fallbacks
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')

@@ -1,0 +1,83 @@
+<section class="w-full bg-deepblack text-white py-24">
+  <div class="max-w-md mx-auto px-4 md:px-8">
+    <div class="text-center mb-10">
+      <h2 class="text-4xl font-bold text-accent mb-2">Anmelden</h2>
+      <p class="text-white/70 text-lg">Melde dich an – oder erstelle in Sekunden ein Konto.</p>
+    </div>
+
+    <div class="bg-black/40 border border-white/10 rounded-2xl p-6 md:p-8 space-y-6">
+
+      <!-- Mode Switch -->
+      <div class="flex gap-2 justify-center">
+        <button
+          class="px-4 py-2 rounded-full border transition"
+          [ngClass]="mode === 'login'
+            ? 'bg-accent text-black border-accent'
+            : 'bg-transparent text-white border-white/15 hover:border-accent/60'"
+          (click)="switchMode('login')">
+          Login
+        </button>
+        <button
+          class="px-4 py-2 rounded-full border transition"
+          [ngClass]="mode === 'signup'
+            ? 'bg-accent text-black border-accent'
+            : 'bg-transparent text-white border-white/15 hover:border-accent/60'"
+          (click)="switchMode('signup')">
+          Signup
+        </button>
+      </div>
+
+      <!-- Username -->
+      <div>
+        <label class="text-sm font-medium text-white/80 mb-2 block">Benutzername</label>
+        <input
+          type="text"
+          [(ngModel)]="creds.name"
+          placeholder="Dein Benutzername"
+          class="w-full bg-black border border-white/10 text-white px-5 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent transition placeholder-white/40" />
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label class="text-sm font-medium text-white/80 mb-2 block">Passwort</label>
+        <input
+          type="password"
+          [(ngModel)]="creds.password"
+          placeholder="••••••••"
+          class="w-full bg-black border border-white/10 text-white px-5 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent transition placeholder-white/40"
+          autocomplete="current-password" />
+      </div>
+
+      <!-- Confirm (Signup only) -->
+      @if (mode === 'signup') {
+        <div>
+          <label class="text-sm font-medium text-white/80 mb-2 block">Passwort bestätigen</label>
+          <input
+            type="password"
+            [(ngModel)]="creds.confirm"
+            placeholder="••••••••"
+            class="w-full bg-black border border-white/10 text-white px-5 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent transition placeholder-white/40"
+            autocomplete="new-password" />
+        </div>
+      }
+
+      <!-- Messages -->
+      @if (error) {
+        <div class="text-sm text-red-400">{{ error }}</div>
+      }
+      @if (message) {
+        <div class="text-sm text-green-400">{{ message }}</div>
+      }
+
+      <!-- Submit -->
+      <div class="text-center pt-2">
+        <button
+          class="bg-accent text-black font-semibold text-lg px-8 py-3 rounded-full hover:bg-orange-400 transition disabled:opacity-60"
+          [disabled]="busy"
+          (click)="submit()">
+          {{ busy ? (mode === 'login' ? 'Melde an…' : 'Erstelle Konto…') : (mode === 'login' ? 'Anmelden' : 'Konto erstellen') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

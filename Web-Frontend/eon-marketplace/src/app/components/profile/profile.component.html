@@ -1,0 +1,116 @@
+<section class="w-full bg-deepblack text-white py-24">
+  <div class="max-w-6xl mx-auto px-4 md:px-12 xl:px-24">
+
+    <!-- Header mit Account-Infos -->
+    <div class="text-center mb-10">
+      <h2 class="text-4xl font-bold text-accent mb-2">Mein Account</h2>
+      <p class="text-white/70 text-lg">
+        @if (account) {
+          Hallo, <span class="font-semibold text-white">{{ account.name }}</span>
+        } @else {
+          Deine hochgeladenen Makros verwalten.
+        }
+      </p>
+    </div>
+
+    <!-- Quick Actions / Stats -->
+    <div class="grid sm:grid-cols-2 gap-4 mb-10">
+      <div class="bg-black/60 border border-white/10 rounded-xl p-4 text-center">
+        <div class="text-2xl font-bold text-accent">{{ myMacros.length }}</div>
+        <div class="text-white/60 text-sm">Meine Makros</div>
+      </div>
+      <div class="bg-black/60 border border-white/10 rounded-xl p-4 text-center">
+        <button
+          class="w-full bg-accent text-black font-semibold px-4 py-2 rounded-lg hover:brightness-110 transition"
+          (click)="goToUpload()"
+        >
+          Neues Makro hochladen
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="flex flex-col md:flex-row gap-4 mb-8 justify-center items-center">
+      <input
+        type="text"
+        [(ngModel)]="nameFilter"
+        placeholder="Nach Makro suchen…"
+        class="bg-black text-white placeholder-white/60 px-4 py-2 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-accent w-full md:w-80 text-sm transition"
+      />
+
+      <select
+        [(ngModel)]="categoryFilter"
+        class="bg-black text-white px-3 py-2 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-accent text-sm transition"
+      >
+        @for (cat of categories; track cat) {
+          <option [value]="cat">{{ cat }}</option>
+        }
+      </select>
+
+      <button
+        class="px-4 py-2 rounded-md border border-white/20 hover:border-accent transition text-sm"
+        (click)="loadMyMacros()"
+      >
+        Aktualisieren
+      </button>
+    </div>
+
+    @if (loading) {
+      <p class="text-center text-white/60">Lade…</p>
+    }
+
+    @if (error) {
+      <p class="text-center text-red-400">{{ error }}</p>
+    }
+
+    @if (message) {
+      <p class="text-center text-green-400">{{ message }}</p>
+    }
+
+    <!-- Meine Makros -->
+    <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+      @for (m of filtered; track m.id) {
+        <div
+          class="p-5 rounded-xl bg-black text-white border transition-all duration-300 shadow-md group"
+          [ngClass]="categoryBorder(m.category)"
+        >
+          @if (m.previewUrl) {
+            <img
+              [src]="m.previewUrl"
+              alt="Preview"
+              class="rounded-lg w-full h-36 object-cover mb-4"
+              loading="lazy"
+            />
+          }
+
+          <h3 class="text-xl font-semibold mb-1 group-hover:text-accent transition-colors duration-200">
+            {{ m.name }}
+          </h3>
+          <p class="text-xs text-white/60 mb-2">{{ m.category || '—' }}</p>
+          <p class="text-sm text-white/50 mb-4">{{ m.description || 'Keine Beschreibung' }}</p>
+
+          <div class="flex gap-3">
+            <button
+              class="px-4 py-2 rounded-md border border-white/30 hover:border-white transition text-sm"
+              (click)="goToDetail(m.id)"
+            >
+              Details
+            </button>
+            <button
+              class="px-4 py-2 rounded-md bg-accent text-black font-semibold hover:brightness-110 transition text-sm"
+              (click)="delete(m)"
+            >
+              Löschen
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (filtered.length === 0 && !loading && !error) {
+        <p class="text-white/40 italic text-center col-span-full mt-6">
+          Keine Makros vorhanden.
+        </p>
+      }
+    </div>
+  </div>
+</section>
