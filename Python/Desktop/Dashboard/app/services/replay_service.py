@@ -1,4 +1,3 @@
-# app/services/replay_service.py
 from __future__ import annotations
 
 import json
@@ -6,10 +5,12 @@ import re
 import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Optional, Callable, List, Dict, Any, Tuple
 
 from .macro_store import MacroStore
+from ..utils.openProgramm import openProgramm
 
 
 class ReplayError(Exception):
@@ -20,28 +21,16 @@ _SCREENSHOT_RE = re.compile(r"screenshot_(\d+)_([-\d]+)_([-\d]+)\.png$", re.IGNO
 
 
 def _parse_name(fname: str) -> Optional[Tuple[int, int, int]]:
-    """
-    Extrahiert (ts, x, y) aus 'screenshot_<ts>_<x>_<y>.png'.
-    Gibt None zurück, wenn das Schema nicht passt.
-    """
     m = _SCREENSHOT_RE.search(fname)
     if not m:
         return None
-    ts = int(m.group(1))
-    x = int(m.group(2))
-    y = int(m.group(3))
+    ts = int(m.group(1)); x = int(m.group(2)); y = int(m.group(3))
     return ts, x, y
 
 
 class ReplayService:
     """
-    Dünner Wrapper um den externen Makro-Client:
-    - nutzt MacroReplayManager (aus macro_replay.py) unverändert
-    - ruft replay_all() auf
-    - setzt cwd = Makro-Ordner (für relative 'screenshots/' & 'results/')
-    - legt 'screenshots'/'results' vorsorglich an
-    - NORMALISIERT die 'screenshot'-Pfade in actions.log -> actions.fixed.log
-      (sucht bestes vorhandenes Icon im screenshots-Ordner)
+    Startet optional zuerst ein 'startup_program' aus meta.json und erst DANN den Macro-Client.
     """
 
     def __init__(self, store: MacroStore, client_dir: Optional[Path] = None) -> None:
@@ -56,6 +45,7 @@ class ReplayService:
             raise ReplayError(
                 f"Makro-Client unvollständig: {self.client_dir}\\macro_replay.py fehlt"
             )
+        self.program_launcher = openProgramm()
 
     # ---------------- public API ----------------
 
@@ -72,14 +62,17 @@ class ReplayService:
         if not actions.exists() or not moves.exists():
             raise ReplayError(f"Benötigt: {actions.name} + {moves.name} in {macro_dir}")
 
-        # Vorsorglich: Ordner anlegen, falls der Client dort schreibt
+        # Ordner sicherstellen
         (macro_dir / "screenshots").mkdir(parents=True, exist_ok=True)
         (macro_dir / "results").mkdir(parents=True, exist_ok=True)
 
-        # Actions-Datei vorbereiten (alle Icon-Pfade auf existierende Dateien mappen)
+        # ---- NEU: Startup-Programm VOR dem Macro öffnen ----
+        self._maybe_start_startup_program(macro_dir)
+
+        # Actions-Datei normalisieren (Icons)
         fixed_actions = self._prepare_actions_file(macro_dir, actions)
 
-        # Minimaler Inline-Code: importiere SEIN macro_replay und starte replay_all()
+        # Inline-Runner für macro_replay.py
         inline = (
             "import sys\n"
             f"sys.path.insert(0, r'{self.client_dir.as_posix()}')\n"
@@ -93,7 +86,6 @@ class ReplayService:
             creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
 
         try:
-            # cwd = Makro-Ordner -> relative 'screenshots/...'-Pfade stimmen
             self._proc = subprocess.Popen(
                 [sys.executable, "-c", inline],
                 cwd=str(macro_dir),
@@ -172,11 +164,31 @@ class ReplayService:
 
     # ---------------- helpers ----------------
 
+    def _maybe_start_startup_program(self, macro_dir: Path) -> None:
+        """
+        Liest meta.json und startet 'extra.startup_program' (z.B. "Word") VOR dem Replay.
+        Wartet kurz, damit Fenster öffnen können.
+        """
+        meta_file = macro_dir / "meta.json"
+        if not meta_file.exists():
+            return
+        try:
+            meta = json.loads(meta_file.read_text(encoding="utf-8"))
+            startup_program = meta.get("extra", {}).get("startup_program")
+            if startup_program and isinstance(startup_program, str) and startup_program.strip():
+                print(f"[ReplayService] Starting program before replay: {startup_program}", flush=True)
+                # versucht, die App zu starten; Fehler sind nicht fatal fürs Replay
+                try:
+                    ok = self.program_launcher.run([startup_program])
+                    if ok:
+                        # kleine Gnadenfrist: App-Fenster darf aufgehen
+                        time.sleep(1.0)
+                except Exception as e:
+                    print(f"[ReplayService] Fehler beim Starten von '{startup_program}': {e}", flush=True)
+        except Exception as e:
+            print(f"[ReplayService] Error reading meta.json for startup_program: {e}", flush=True)
+
     def _find_client_dir(self) -> Path:
-        """
-        Sucht 'Makro-Client' neben Desktop/Dashboard/Python.
-        Wenn du einen fixen Pfad hast, gib ihn beim Konstruktor rein.
-        """
         here = Path(__file__).resolve()
         desktop_dir = here.parents[3]       # .../Desktop
         dashboard_dir = here.parents[2]     # .../Desktop/Dashboard
@@ -184,33 +196,21 @@ class ReplayService:
 
         candidates = [
             desktop_dir / "Makro-Client",
-            python_dir / "Makro-Client",            # dein üblicher Pfad
+            python_dir / "Makro-Client",
             dashboard_dir.parent / "Makro-Client",
         ]
         for c in candidates:
             if c.exists():
                 return c
-
         tried = " | ".join(str(c) for c in candidates)
         raise ReplayError(f"Makro-Client nicht gefunden. Versuchte Pfade: {tried}")
 
     # -------- actions.log -> actions.fixed.log mit Pfad-Resolver --------
 
     def _prepare_actions_file(self, macro_dir: Path, actions_path: Path) -> Path:
-        """
-        Liest actions.log (JSON lines) und normalisiert 'screenshot'-Pfade:
-        - Existiert der Pfad? -> wenn er im lokalen screenshots/-Ordner liegt, relativ schreiben.
-        - Sonst im <macro_dir>/screenshots/ bestmögliches Icon suchen:
-            1) exakter Name
-            2) gleicher (x,y), nächstliegender ts
-            3) beliebiger nächstliegender ts
-            4) fallback: screenshot_.png (falls vorhanden)
-        - Schreibt nach actions.fixed.log und gibt diesen Pfad zurück.
-        """
         fixed_path = macro_dir / "actions.fixed.log"
         screenshots_dir = macro_dir / "screenshots"
 
-        # Index der vorhandenen Screenshots bauen
         all_pngs = sorted(screenshots_dir.glob("*.png"))
         by_xy: Dict[Tuple[int, int], List[Tuple[int, Path]]] = {}
         by_ts: List[Tuple[int, Path]] = []
@@ -220,7 +220,7 @@ class ReplayService:
             meta = _parse_name(p.name)
             if not meta:
                 if p.name.lower() == "screenshot_.png":
-                    continue  # fallback separat
+                    continue
                 continue
             ts, x, y = meta
             by_ts.append((ts, p))
@@ -243,50 +243,38 @@ class ReplayService:
             return best
 
         def rel_in_screenshots(p: Path) -> str:
-            # garantiert Forward Slashes + relativer Pfad
             return f"screenshots/{p.name}"
 
         def resolve_icon(requested_path: str) -> str:
             abs_req = Path(requested_path)
-
-            # 0) Falls der exakte Pfad existiert:
             if abs_req.exists():
-                # Wenn er im lokalen screenshots/-Ordner liegt -> relativ zurückgeben
                 try:
                     abs_req.relative_to(screenshots_dir)
                     return rel_in_screenshots(abs_req)
                 except Exception:
-                    # Liegt außerhalb -> notfalls posix-abs Pfad beibehalten
                     return abs_req.as_posix()
 
-            # 1) Gleichnamige Datei im lokalen screenshots/-Ordner?
             candidate = screenshots_dir / abs_req.name
             if candidate.exists():
                 return rel_in_screenshots(candidate)
 
-            # 2) Metadaten aus gewünschtem Namen ziehen und bestes Match im lokalen Ordner finden
             meta = _parse_name(abs_req.name)
             if meta:
                 ts, x, y = meta
-                # 2a) gleicher (x,y) -> nächstliegender ts
                 lst = by_xy.get((x, y), [])
                 p = nearest_by_ts(ts, lst)
                 if p:
                     return rel_in_screenshots(p)
-                # 2b) global nächstliegender ts
                 p = nearest_by_ts(ts, by_ts)
                 if p:
                     return rel_in_screenshots(p)
 
-            # 3) Fallback: screenshot_.png
             if fallback_blank.exists():
                 return rel_in_screenshots(fallback_blank)
 
-            # 4) Letzte Rettung: irgendeine vorhandene Datei (im lokalen Ordner -> relativ)
             if all_pngs:
                 return rel_in_screenshots(all_pngs[0])
 
-            # 5) Gar nichts gefunden -> Originalpfad posix-normalisiert zurückgeben
             return abs_req.as_posix()
 
         lines_out: List[str] = []

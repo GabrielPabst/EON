@@ -104,11 +104,12 @@ class RecorderService:
         self,
         *,
         name: str,
-        category: Optional[str] = None,   # momentan optional
+        category: Optional[str] = None,
         author: Optional[str] = None,
         hotkey: Optional[str] = None,
         description: Optional[str] = None,
-        extra_meta: Optional[Dict[str, Any]] = None
+        extra_meta: Optional[Dict[str, Any]] = None,
+        startup_program: Optional[str] = None
     ) -> Optional[dict]:
         if not self._record_dir:
             raise RecorderError("No recording to save.")
@@ -127,7 +128,7 @@ class RecorderService:
             meta = self.store.add_from_folder(str(self._record_dir))
             macro_id = meta.get("id") if meta else None
 
-            # 2) Felder vorbereiten (auch Description!)
+            # 2) Felder vorbereiten
             fields: Dict[str, Any] = {}
             if name:
                 fields["name"] = name
@@ -138,7 +139,6 @@ class RecorderService:
             if hotkey is not None:
                 fields["hotkey"] = hotkey
 
-            # description kommt entweder separat oder via extra_meta["description"]
             desc = description
             if desc is None and extra_meta and isinstance(extra_meta, dict):
                 d2 = extra_meta.get("description")
@@ -149,6 +149,12 @@ class RecorderService:
 
             if extra_meta:
                 fields["extra"] = extra_meta
+            
+            # Startup program in extra speichern
+            if startup_program:
+                if "extra" not in fields:
+                    fields["extra"] = {}
+                fields["extra"]["startup_program"] = startup_program
 
             # 3) Index + meta.json konsistent aktualisieren
             if macro_id:
@@ -273,3 +279,26 @@ class RecorderService:
             raise RecorderError(
                 f"Recorder-Client incomplete (recorder_client.py missing) in {self.recorder_client_dir}"
             )
+
+    def finalize_recording(
+        self,
+        name: str,
+        category: str = None,
+        startup_program: str = None
+    ):
+        if not self._record_dir:
+            raise RecorderError("No recording to finalize.")
+        meta_path = self._record_dir / "meta.json"
+        if not meta_path.exists():
+            raise RecorderError("Meta file not found in recording directory.")
+
+        try:
+            # Meta-Daten aktualisieren
+            meta = {
+                "name": name,
+                "category": category,
+                "startup_program": startup_program,
+            }
+            meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception as e:
+            raise RecorderError(f"Failed to finalize recording: {e}") from e

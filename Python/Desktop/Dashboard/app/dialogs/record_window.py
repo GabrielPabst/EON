@@ -4,11 +4,13 @@ from typing import Optional, Dict
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit, QPushButton, QWidget
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit, QPushButton, QWidget, QMessageBox, QComboBox
 )
 
 from ..services.recorder_service import RecorderService
+from ..services.process_helper import get_running_applications
 from ..widgets.record_hud import RecordHUD
+from ..utils.openProgramm import openProgramm
 
 
 class RecordWindow(QDialog):
@@ -18,6 +20,7 @@ class RecordWindow(QDialog):
     def __init__(self, recorder: RecorderService, parent=None):
         super().__init__(parent)
         self.recorder = recorder
+        self.program_launcher = openProgramm()
         self._hud: Optional[RecordHUD] = None
         self._ended_unsaved = False
 
@@ -50,6 +53,11 @@ class RecordWindow(QDialog):
         self.desc_wrap = self._field("Description", self.desc_edit)
         self.desc_wrap.setVisible(False)
         root.addWidget(self.desc_wrap)
+
+        self.startup_combo = self._build_startup_combo()
+        self.startup_wrap = self._field("Startup Program (optional)", self.startup_combo)
+        self.startup_wrap.setVisible(False)
+        root.addWidget(self.startup_wrap)
 
         self.row_idle = self._buttons([
             ("Start recording", self._start),
@@ -89,6 +97,25 @@ class RecordWindow(QDialog):
         h.addStretch(1)
         return row
 
+    def _build_startup_combo(self) -> QComboBox:
+        combo = QComboBox()
+        combo.setEditable(True)
+        combo.addItem("None")
+        
+        # Add running applications
+        running_apps = get_running_applications()
+        for app in running_apps[:20]:  # Limit to 20 most recent
+            combo.addItem(app)
+        
+        # Add known applications
+        for app_name in sorted(list(self.program_launcher.known_paths.keys())[:15]):
+            if app_name not in [combo.itemText(i) for i in range(combo.count())]:
+                combo.addItem(app_name)
+        
+        combo.setMinimumHeight(36)
+        combo.lineEdit().setPlaceholderText("Type program name or select from list...")
+        return combo
+
     def _apply_styles(self):
         self.setStyleSheet("""
         QDialog { background:#0a0a0a; color:#f2f2f2; }
@@ -105,6 +132,7 @@ class RecordWindow(QDialog):
         self.row_idle.setVisible(idle)
         self.row_after.setVisible(not idle)
         self.desc_wrap.setVisible(not idle)
+        self.startup_wrap.setVisible(not idle)
 
     # Actions
     def _start(self):
@@ -158,12 +186,19 @@ class RecordWindow(QDialog):
         desc = (self.desc_edit.toPlainText() or "").strip()
         if desc:
             extra["description"] = desc
+        
+        # Get selected or typed startup program BEFORE saving
+        startup_program = self.startup_combo.currentText().strip()
+        if startup_program.lower() == "none":
+            startup_program = None
+        
         try:
             meta = self.recorder.save_recording(
                 name=name,
                 author="",
                 description=desc if desc else None,
-                extra_meta=extra
+                extra_meta=extra,
+                startup_program=startup_program
             )
         except Exception as e:
             self._toast(f"Save failed: {e}")
@@ -171,6 +206,7 @@ class RecordWindow(QDialog):
         if not meta:
             self._toast("Save failed.")
             return
+
         self.saved.emit(meta)
         self.accept()
 

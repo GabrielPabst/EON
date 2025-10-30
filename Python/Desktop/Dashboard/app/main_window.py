@@ -139,6 +139,7 @@ class MainWindow(QMainWindow):
         self.searchEdit = QLineEdit(); self.searchEdit.setPlaceholderText("Search…"); self.searchEdit.setClearButtonEnabled(True)
         self.searchEdit.setMinimumHeight(36); self.searchEdit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed); tb.addWidget(self.searchEdit, 2)
         self.btnRecord = QPushButton("Record"); self.btnRecord.setMinimumHeight(36); self.btnRecord.clicked.connect(self._open_record_window); tb.addWidget(self.btnRecord)
+        self.btnMarketplace = QPushButton("Marketplace"); self.btnMarketplace.setMinimumHeight(36); self.btnMarketplace.clicked.connect(self._open_marketplace); tb.addWidget(self.btnMarketplace)
         root_layout.addWidget(topbar)
 
         split = QSplitter(Qt.Horizontal, self)
@@ -551,6 +552,45 @@ class MainWindow(QMainWindow):
         dlg = SettingsDialog(self)
         if dlg.exec() == QDialog.Accepted:
             self.statusBar().showMessage("Settings saved.", 2000)
+
+    def _open_marketplace(self):
+        """Öffnet die Marketplace-App."""
+        try:
+            # Suche Marketplace-App neben Desktop/Makro-Client/etc.
+            desktop_root = Path(__file__).resolve().parents[2]  # .../Desktop
+            python_root = desktop_root.parent                    # .../Python
+            
+            candidates = [
+                desktop_root / "Marketplace",
+                python_root / "Marketplace",
+                desktop_root.parent / "Marketplace",
+            ]
+            
+            marketplace_dir = None
+            for c in candidates:
+                if c.exists():
+                    # Versuche marketplace.py, dann main.py
+                    if (c / "marketplace.py").exists():
+                        marketplace_dir = c
+                        script = "marketplace.py"
+                        break
+                    elif (c / "main.py").exists():
+                        marketplace_dir = c
+                        script = "main.py"
+                        break
+            
+            if not marketplace_dir:
+                self.statusBar().showMessage("Marketplace nicht gefunden.", 3000)
+                return
+            
+            # Starte Marketplace als Python-Prozess
+            subprocess.Popen(
+                [sys.executable, str(marketplace_dir / script)],
+                cwd=str(marketplace_dir)
+            )
+            self.statusBar().showMessage("Marketplace wird geöffnet...", 2000)
+        except Exception as e:
+            self.statusBar().showMessage(f"Marketplace konnte nicht geöffnet werden: {e}", 4000)
 
     def _sync_hotkeys(self, rows):
         for row in rows:
