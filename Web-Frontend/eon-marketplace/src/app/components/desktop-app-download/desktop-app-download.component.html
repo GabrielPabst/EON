@@ -1,32 +1,41 @@
 <section class="w-full bg-deepblack text-white py-24">
   <div class="max-w-6xl mx-auto px-6">
 
+    <!-- Intro -->
     <div class="text-center mb-16">
       <h2 class="text-4xl font-bold text-accent mb-4">EON Desktop-App</h2>
       <p class="text-white/70 text-lg max-w-2xl mx-auto">
-        Die EON Desktop-App erlaubt dir, deine Makros lokal zu verwalten, auszuführen und direkt zu konfigurieren, ganz ohne Browser.
-        Ideal für professionelle Workflows und Offline-Szenarien.
+        Die EON Desktop-App ist dein Control-Center für Makros: lokal verwalten, aufnehmen, abspielen,
+        Hotkeys setzen und Makros aus dem Marketplace beziehen – alles ohne Browser.
       </p>
     </div>
 
+    <!-- Features -->
     <div class="grid md:grid-cols-2 gap-12 mb-20 items-start">
       <div>
         <h3 class="text-2xl font-semibold mb-4">Funktionen</h3>
         <ul class="list-disc list-inside text-white/80 space-y-2">
-          <li>Makros durchsuchen & starten mit einem Klick</li>
-          <li>Lokale Vorschau mit eingebetteter Skriptausführung</li>
-          <li>Speicherung von Favoriten & benutzerdefinierter Sets</li>
-          <li>Darkmode UI für fokussiertes Arbeiten</li>
-          <li>Automatische Updates (optional)</li>
-          <li>Windows-, Linux- & macOS-Support</li>
+          <li><span class="font-semibold text-accent">Makros aufnehmen & abspielen</span></li>
+          <li><span class="font-semibold text-accent">Startup-Programme</span> vor dem Replay automatisch starten</li>
+          <li><span class="font-semibold text-accent">Globale Hotkeys</span> pro Makro setzen und sofort ausführen</li>
+          <li><span class="font-semibold text-accent">Marketplace in der App</span> (Makros suchen, Details ansehen, herunterladen)</li>
+          <li><span class="font-semibold text-accent">Vorschau & Analyse</span> (Timeline, Screenshots, Logs)</li>
+          <li><span class="font-semibold text-accent">Favoriten & Sets</span> für eigene Workflows speichern</li>
+          <li>Lokale Speicherung, <span class="font-semibold">offline nutzbar</span>, Dark-UI für Fokus</li>
         </ul>
       </div>
 
       <div class="border border-white/10 bg-black rounded-xl h-64 flex items-center justify-center">
-        <span class="text-white/30 italic">[ Screenshot / Vorschau der App ]</span>
+        <img
+          src="/assets/app.png"
+          alt="DesktopApp"
+          class="w-full h-full object-cover"
+          loading="lazy"
+        />
       </div>
     </div>
 
+    <!-- Downloads -->
     <div class="text-center mb-20">
       <h4 class="text-xl font-semibold mb-6">Jetzt herunterladen</h4>
       <div class="flex flex-wrap justify-center gap-6 mb-4">
@@ -37,39 +46,55 @@
 
         <a href="/downloads/eon-desktop-linux.AppImage"
            class="bg-accent hover:bg-orange-400 text-black font-semibold text-lg px-6 py-3 rounded-full transition">
-          Für Linux
+          Für Linux <span class="opacity-70 text-sm">(Preview)</span>
         </a>
 
         <a href="/downloads/eon-desktop-mac.dmg"
            class="bg-accent hover:bg-orange-400 text-black font-semibold text-lg px-6 py-3 rounded-full transition">
-          Für macOS
+          Für macOS <span class="opacity-70 text-sm">(Preview)</span>
         </a>
       </div>
       <p class="text-white/50 text-sm">Letztes Update: July 31, 2025</p>
     </div>
 
+    <!-- Deep dives -->
     <div class="space-y-20">
       <!-- Block 1 -->
       <div class="grid md:grid-cols-2 gap-10 items-center">
         <div class="border border-white/10 bg-black rounded-xl h-64 flex items-center justify-center">
-          <span class="text-white/30 italic">[ Screenshot: Makro-Dashboard ]</span>
+          <img
+            src="/assets/marketplaceInApp.png"
+            alt="Marketplace in der App"
+            class="w-full h-full object-cover"
+            loading="lazy"
+          />
         </div>
         <div>
-          <h5 class="text-xl font-semibold mb-2">Alles im Überblick</h5>
+          <h5 class="text-xl font-semibold mb-2">Marketplace direkt in der App</h5>
           <p class="text-white/70">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mit einem zentralen Dashboard siehst du all deine installierten Makros, letzten Ausführungen und Favoriten auf einen Blick.
+            Durchsuche Makros nach Kategorie, Autor oder Use-Case und sieh dir Bewertungen, Screenshots
+            und Funktionen an. Lade das gewünschte Makro herunter und <span class="font-semibold text-accent">importiere es mit einem Klick</span>
+            in deine Desktop-App.
           </p>
         </div>
       </div>
 
+      <!-- Block 2 -->
       <div class="grid md:grid-cols-2 gap-10 items-center">
         <div class="md:order-2 border border-white/10 bg-black rounded-xl h-64 flex items-center justify-center">
-          <span class="text-white/30 italic">[ Screenshot: Makro-Ausführung ]</span>
+          <img
+            src="/assets/editor.png"
+            alt="Makros ausführen & konfigurieren"
+            class="w-full h-full object-cover"
+            loading="lazy"
+          />
         </div>
         <div class="md:order-1">
-          <h5 class="text-xl font-semibold mb-2">Makros ausführen & konfigurieren</h5>
+          <h5 class="text-xl font-semibold mb-2">Ausführen, konfigurieren, analysieren</h5>
           <p class="text-white/70">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Du kannst Makros direkt starten, Parameter definieren und Skripte anpassen – alles in einer klaren Oberfläche.
+            Starte Makros per Play-Button oder globalem Hotkey. Definiere ein <span class="text-accent font-semibold">Startup-Programm</span>,
+            passe Parameter an und behalte Timeline, Screenshots und Logs im Blick so findest du schnell die passende
+            Einstellung und erkennst Ursachen bei Fehlschlägen.
           </p>
         </div>
       </div>
