@@ -6,4 +6,5 @@ export interface Macro {
   filename: string;
   file: File | null;
   createdAt: Date;
+  previewUrl?: string | null;
 }

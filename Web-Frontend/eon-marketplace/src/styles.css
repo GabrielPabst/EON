@@ -4,8 +4,8 @@
 
 @layer utilities {
   .card-glow {
-    @apply bg-neutral-900 text-white rounded-xl p-6 transition-transform duration-300;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+    @apply bg-neutral-800 text-white rounded-xl p-6 transition-transform duration-300;
+    box-shadow: 0 5px 20px rgba(24, 24, 24, 0.25);
   }
 
   .card-glow:hover {

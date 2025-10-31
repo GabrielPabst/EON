@@ -8,47 +8,75 @@
       <!-- Logo -->
       <div
         class="text-2xl font-extrabold bg-gradient-to-r from-accent via-goldlight to-accent bg-clip-text text-transparent cursor-pointer tracking-wide"
-        [routerLink]="'/home'"
-      >
+        [routerLink]="'/home'">
         EON Marketplace
       </div>
 
-      <!-- Navigation -->
-      <nav class="flex gap-10 text-base font-semibold tracking-tight">
-        <a
-          routerLink="/home"
-          routerLinkActive="text-accent underline underline-offset-8"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="transition hover:text-accent hover:underline hover:underline-offset-8"
-        >
-          Home
-        </a>
-        <a
-          routerLink="/macros"
-          routerLinkActive="text-accent underline underline-offset-8"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="transition hover:text-accent hover:underline hover:underline-offset-8"
-        >
-          Makros
-        </a>
-        <a
-          routerLink="/upload"
-          routerLinkActive="text-accent underline underline-offset-8"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="transition hover:text-accent hover:underline hover:underline-offset-8"
-        >
-          Upload
-        </a>
+      <!-- Right: Navigation + Auth -->
+      <div class="flex items-center gap-6">
+        <!-- Navigation -->
+        <nav class="flex gap-10 text-base font-semibold tracking-tight">
+          <a
+            routerLink="/home"
+            routerLinkActive="text-accent underline underline-offset-8"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="transition hover:text-accent hover:underline hover:underline-offset-8">
+            Home
+          </a>
 
-        <a
-          routerLink="/downloadApp"
-          routerLinkActive="text-accent underline underline-offset-8"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="transition hover:text-accent hover:underline hover:underline-offset-8"
-        >
-          Desktop-App
-        </a>
-      </nav>
+          <a
+            routerLink="/macros"
+            routerLinkActive="text-accent underline underline-offset-8"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="transition hover:text-accent hover:underline hover:underline-offset-8">
+            Makros
+          </a>
+
+          <a
+            routerLink="/upload"
+            routerLinkActive="text-accent underline underline-offset-8"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="transition hover:text-accent hover:underline hover:underline-offset-8">
+            Upload
+          </a>
+
+          <a
+            routerLink="/downloadApp"
+            routerLinkActive="text-accent underline underline-offset-8"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="transition hover:text-accent hover:underline hover:underline-offset-8">
+            Desktop-App
+          </a>
+
+          <!-- Mein Account nur wenn eingeloggt -->
+          @if (isLoggedIn$ | async) {
+            <a
+              routerLink="/profile"
+              routerLinkActive="text-accent underline underline-offset-8"
+              class="transition hover:text-accent hover:underline hover:underline-offset-8">
+              Mein Account
+            </a>
+          }
+        </nav>
+
+        <!-- Auth Controls -->
+        @if (isLoggedIn$ | async) {
+          <div class="flex items-center gap-3">
+            <span class="text-sm text-white/70">Angemeldet</span>
+            <button
+              class="px-4 py-2 rounded-full border border-white/15 hover:border-accent/60 transition"
+              (click)="logout()">
+              Logout
+            </button>
+          </div>
+        } @else {
+          <a
+            routerLink="/login"
+            class="bg-accent text-black font-semibold px-5 py-2 rounded-full hover:bg-orange-400 transition">
+            Login
+          </a>
+        }
+      </div>
     </div>
   </header>
 
