@@ -7,29 +7,25 @@ from datetime import datetime
 import os
 import uuid
 import zipfile
+import mimetypes
+from sqlalchemy import text
 
-# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 from flask_cors import CORS
 CORS(app, origins=["http://localhost:4200"], supports_credentials=True)
 
-
-# Configuration from environment variables with fallbacks
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://username:password@localhost:5432/makros_db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_FILE_SIZE_MB', 100)) * 1024 * 1024
 
-# Initialize extensions
 db = SQLAlchemy(app)
 
-# Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Models
 class Account(db.Model):
     __tablename__ = 'accounts'
     
@@ -38,7 +34,6 @@ class Account(db.Model):
     password = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationship
     makros = db.relationship('Makro', backref='author', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self):
@@ -56,7 +51,8 @@ class Makro(db.Model):
     desc = db.Column(db.Text, nullable=True)
     usecase = db.Column(db.String(200), nullable=True)
     author_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
-    filename = db.Column(db.String(255), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)            # relativ zu UPLOAD_FOLDER (inkl. Unterordner)
+    preview_filename = db.Column(db.String(255), nullable=True)     # relativ zu UPLOAD_FOLDER (inkl. Unterordner)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -69,10 +65,10 @@ class Makro(db.Model):
             'author_id': self.author_id,
             'author_name': self.author.name,
             'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
+            'updated_at': self.updated_at.isoformat(),
+            'preview_url': f"/api/makros/{self.id}/preview" if self.preview_filename else None
         }
 
-# Helper functions
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'zip'
 
@@ -83,7 +79,43 @@ def is_valid_zip(file_path):
     except:
         return False
 
-# Account Routes
+def _is_preview_member(name: str) -> bool:
+    base = os.path.basename(name).lower()
+    if not (base.startswith('preview.') or base.startswith('thumb.') or base.startswith('thumbnail.')):
+        return False
+    ext = os.path.splitext(base)[1]
+    return ext in {'.png', '.jpg', '.jpeg', '.webp', '.mp4', '.webm'}
+
+def _save_preview_filestorage(fs, subdir_abs: str, subdir_rel: str) -> str | None:
+    if not fs or not getattr(fs, 'filename', ''):
+        return None
+    base, ext = os.path.splitext(fs.filename.lower())
+    if ext not in {'.png', '.jpg', '.jpeg', '.webp', '.mp4', '.webm'}:
+        return None
+    unique = f"preview{ext}"
+    abs_path = os.path.join(subdir_abs, unique)
+    fs.save(abs_path)
+    return os.path.join(subdir_rel, unique)
+
+def _extract_preview_from_zip(zip_path: str, subdir_abs: str, subdir_rel: str) -> str | None:
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as z:
+            for n in z.namelist():
+                if _is_preview_member(n):
+                    ext = os.path.splitext(n.lower())[1]
+                    rel_name = f"preview{ext}"
+                    abs_dest = os.path.join(subdir_abs, rel_name)
+                    with z.open(n) as src, open(abs_dest, 'wb') as out:
+                        out.write(src.read())
+                    return os.path.join(subdir_rel, rel_name)
+    except:
+        return None
+    return None
+
+def _guess_mime(p: str) -> str:
+    mt, _ = mimetypes.guess_type(p)
+    return mt or 'application/octet-stream'
+
 @app.route('/api/accounts/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -160,13 +192,11 @@ def logout():
     session.pop('account_id', None)
     return jsonify({'message': 'Logged out successfully'}), 200
 
-# Makro Routes
 @app.route('/api/makros', methods=['POST'])
 def upload_makro():
     if 'account_id' not in session:
         return jsonify({'error': 'Not logged in'}), 401
         
-    # Check if file is present
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
     
@@ -177,32 +207,67 @@ def upload_makro():
     if not allowed_file(file.filename):
         return jsonify({'error': 'Invalid file type. Only ZIP files are allowed'}), 400
     
-    # Get makro metadata
     name = request.form.get('name')
     desc = request.form.get('desc', '')
     usecase = request.form.get('usecase', '')
     
-    if not name:
-        return jsonify({'error': 'Makro name is required'}), 400
+    base_id = uuid.uuid4().hex
+    subdir_rel = base_id
+    subdir_abs = os.path.join(app.config['UPLOAD_FOLDER'], subdir_rel)
+    os.makedirs(subdir_abs, exist_ok=True)
+
+    safe_orig = secure_filename(file.filename)
+    zip_rel = os.path.join(subdir_rel, safe_orig)
+    zip_abs = os.path.join(subdir_abs, safe_orig)
+    file.save(zip_abs)
     
-    # Save file
-    filename = secure_filename(file.filename)
-    unique_filename = f"{uuid.uuid4()}_{filename}"
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-    file.save(file_path)
-    
-    # Validate ZIP file
-    if not is_valid_zip(file_path):
-        os.remove(file_path)
+    if not is_valid_zip(zip_abs):
+        try:
+            os.remove(zip_abs)
+        except FileNotFoundError:
+            pass
+        try:
+            os.rmdir(subdir_abs)
+        except OSError:
+            pass
         return jsonify({'error': 'Invalid ZIP file'}), 400
     
-    # Create makro record
+    try:
+        with zipfile.ZipFile(zip_abs, 'r') as z:
+            meta_name = None
+            for cand in ('meta.json', 'meta/meta.json'):
+                if cand in z.namelist():
+                    meta_name = cand
+                    break
+            if meta_name:
+                import json
+                with z.open(meta_name) as f:
+                    meta = json.load(f)
+                name = meta.get('name', name) or name
+                desc = meta.get('description', meta.get('desc', desc)) or desc
+                usecase = meta.get('usecase', meta.get('category', usecase)) or usecase
+    except Exception:
+        pass
+    
+    if not name:
+        name = os.path.splitext(safe_orig)[0].replace('_', ' ').replace('-', ' ').strip()
+    
+    preview_filename = None
+    preview_fs = request.files.get('preview')
+    if preview_fs and preview_fs.filename:
+        pf_rel = _save_preview_filestorage(preview_fs, subdir_abs, subdir_rel)
+        if pf_rel:
+            preview_filename = pf_rel
+    if not preview_filename:
+        preview_filename = _extract_preview_from_zip(zip_abs, subdir_abs, subdir_rel)
+    
     makro = Makro(
         name=name,
         desc=desc,
         usecase=usecase,
         author_id=session['account_id'],
-        filename=unique_filename
+        filename=zip_rel,
+        preview_filename=preview_filename
     )
     
     db.session.add(makro)
@@ -213,25 +278,31 @@ def upload_makro():
 @app.route('/api/makros/<int:makro_id>', methods=['GET'])
 def get_makro(makro_id):
     makro = Makro.query.get(makro_id)
-    
     if not makro:
         return jsonify({'error': 'Makro not found'}), 404
-    
     return jsonify({'makro': makro.to_dict()}), 200
 
 @app.route('/api/makros/<int:makro_id>/download', methods=['GET'])
 def download_makro(makro_id):
     makro = Makro.query.get(makro_id)
-    
     if not makro:
         return jsonify({'error': 'Makro not found'}), 404
-    
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], makro.filename)
-    
     if not os.path.exists(file_path):
         return jsonify({'error': 'Makro file not found'}), 404
-    
     return send_file(file_path, as_attachment=True, download_name=f"{makro.name}.zip")
+
+@app.route('/api/makros/<int:makro_id>/preview', methods=['GET'])
+def preview_makro(makro_id):
+    makro = Makro.query.get(makro_id)
+    if not makro:
+        return jsonify({'error': 'Makro not found'}), 404
+    if not makro.preview_filename:
+        return jsonify({'error': 'Preview not available'}), 404
+    path = os.path.join(app.config['UPLOAD_FOLDER'], makro.preview_filename)
+    if not os.path.exists(path):
+        return jsonify({'error': 'Preview file not found'}), 404
+    return send_file(path, mimetype=_guess_mime(path), as_attachment=False)
 
 @app.route('/api/makros/<int:makro_id>', methods=['PUT'])
 def update_makro(makro_id):
@@ -239,15 +310,12 @@ def update_makro(makro_id):
         return jsonify({'error': 'Not logged in'}), 401
         
     makro = Makro.query.get(makro_id)
-    
     if not makro:
         return jsonify({'error': 'Makro not found'}), 404
-    
     if makro.author_id != session['account_id']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
-    
     if data.get('name'):
         makro.name = data['name']
     if 'desc' in data:
@@ -257,7 +325,6 @@ def update_makro(makro_id):
     
     makro.updated_at = datetime.utcnow()
     db.session.commit()
-    
     return jsonify({'message': 'Makro updated successfully', 'makro': makro.to_dict()}), 200
 
 @app.route('/api/makros/<int:makro_id>', methods=['DELETE'])
@@ -266,37 +333,43 @@ def delete_makro(makro_id):
         return jsonify({'error': 'Not logged in'}), 401
         
     makro = Makro.query.get(makro_id)
-    
     if not makro:
         return jsonify({'error': 'Makro not found'}), 404
-    
     if makro.author_id != session['account_id']:
         return jsonify({'error': 'Unauthorized'}), 403
     
-    # Delete file from filesystem
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], makro.filename)
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    zip_path = os.path.join(app.config['UPLOAD_FOLDER'], makro.filename)
+    try:
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
+    finally:
+        pass
+    if makro.preview_filename:
+        prev_path = os.path.join(app.config['UPLOAD_FOLDER'], makro.preview_filename)
+        try:
+            if os.path.exists(prev_path):
+                os.remove(prev_path)
+        finally:
+            pass
+    try:
+        subdir = os.path.dirname(zip_path)
+        if os.path.isdir(subdir) and not os.listdir(subdir):
+            os.rmdir(subdir)
+    except OSError:
+        pass
     
-    # Delete from database
     db.session.delete(makro)
     db.session.commit()
-    
     return jsonify({'message': 'Makro deleted successfully'}), 200
 
-# Marketplace Routes
 @app.route('/api/marketplace', methods=['GET'])
 def get_all_makros():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
-    
-    # Limit per_page to prevent abuse
     per_page = min(per_page, 100)
-    
     makros = Makro.query.order_by(Makro.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
-    
     return jsonify({
         'makros': [makro.to_dict() for makro in makros.items],
         'total': makros.total,
@@ -307,27 +380,21 @@ def get_all_makros():
 @app.route('/api/marketplace/random', methods=['GET'])
 def get_random_makros():
     count = request.args.get('count', 10, type=int)
-    count = min(count, 50)  # Limit to prevent abuse
-    
+    count = min(count, 50)
     makros = Makro.query.order_by(db.func.random()).limit(count).all()
-    
     return jsonify({
         'makros': [makro.to_dict() for makro in makros]
     }), 200
 
 @app.route('/api/marketplace/search', methods=['GET'])
 def search_makros():
-    # Get query parameters
     query = request.args.get('q', '')
     usecase = request.args.get('usecase', '')
     author = request.args.get('author', '')
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     
-    # Build base query
     makros_query = Makro.query
-    
-    # Apply filters
     if query:
         makros_query = makros_query.filter(
             db.or_(
@@ -335,17 +402,13 @@ def search_makros():
                 Makro.desc.ilike(f'%{query}%')
             )
         )
-    
     if usecase:
         makros_query = makros_query.filter(Makro.usecase.ilike(f'%{usecase}%'))
-    
     if author:
         makros_query = makros_query.join(Account).filter(Account.name.ilike(f'%{author}%'))
     
-    # Paginate results
-    per_page = min(per_page, 100)  # Limit per_page to prevent abuse
+    per_page = min(per_page, 100)
     makros = makros_query.paginate(page=page, per_page=per_page, error_out=False)
-    
     return jsonify({
         'makros': [makro.to_dict() for makro in makros.items],
         'total': makros.total,
@@ -353,7 +416,6 @@ def search_makros():
         'current_page': makros.page
     }), 200
 
-# User's own makros
 @app.route('/api/my-makros', methods=['GET'])
 def get_my_makros():
     if 'account_id' not in session:
@@ -361,13 +423,10 @@ def get_my_makros():
         
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
-    
-    per_page = min(per_page, 100)  # Limit per_page to prevent abuse
-    
+    per_page = min(per_page, 100)
     makros = Makro.query.filter_by(author_id=session['account_id']).order_by(
         Makro.created_at.desc()
     ).paginate(page=page, per_page=per_page, error_out=False)
-    
     return jsonify({
         'makros': [makro.to_dict() for makro in makros.items],
         'total': makros.total,
@@ -375,7 +434,6 @@ def get_my_makros():
         'current_page': makros.page
     }), 200
 
-# Error handlers
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Not found'}), 404
@@ -388,9 +446,13 @@ def internal_error(error):
 def too_large(error):
     return jsonify({'error': 'File too large'}), 413
 
-# Initialize database
 with app.app_context():
     db.create_all()
+    try:
+        db.session.execute(text("ALTER TABLE makros ADD COLUMN IF NOT EXISTS preview_filename VARCHAR(255)"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     print("Database tables created successfully!")
 
 if __name__ == '__main__':

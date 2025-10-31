@@ -108,7 +108,7 @@ class RecordWindow(QDialog):
             combo.addItem(app)
         
         # Add known applications
-        for app_name in sorted(list(self.program_launcher.known_paths.keys())[:15]):
+        for app_name in sorted(list(self.program_launcher.KNOWN_APPS.keys())[:15]):
             if app_name not in [combo.itemText(i) for i in range(combo.count())]:
                 combo.addItem(app_name)
         
